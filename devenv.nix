@@ -44,6 +44,16 @@
     exec "$REPO_DIR/scripts/check-secrets-encrypted.sh"
   '';
 
+  scripts.flash-bootstick.exec = ''
+    REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+    exec "$REPO_DIR/scripts/flash-bootstick.sh" "$@"
+  '';
+
+  scripts.write-iso.exec = ''
+    REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+    exec "$REPO_DIR/scripts/flash-bootstick.sh" "$@"
+  '';
+
   enterShell = ''
         export SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
         export EDITOR="''${EDITOR:-nvim}"
@@ -65,6 +75,7 @@
         echo "  edit-secrets               - Edit secrets/secrets.yaml with $EDITOR"
         echo "  bootstrap-node <host> <ip> - Provision a fresh node via nixos-anywhere"
         echo "  deploy [-d|--dirty] [...]  - Auto-commit & push to Git, then colmena apply"
+        echo "  flash-bootstick [device]   - Build and write headless ISO (e.g. /dev/sda)"
         echo "  check-secrets              - Verify all secrets are encrypted"
   '';
 }
