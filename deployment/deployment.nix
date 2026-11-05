@@ -1,14 +1,30 @@
-{ inputs, ... }: {
+{ inputs, ... }:
+let
+  network = import ../common/network.nix;
+in
+{
   meta = {
     nixpkgs = import inputs.nixpkgs { system = "x86_64-linux"; };
     specialArgs = { inherit inputs; };
   };
 
+  router = { ... }: {
+    deployment.targetHost = network.hosts.router.ip;
+    deployment.targetUser = "qajus";
+    imports = [
+      inputs.sops-nix.nixosModules.sops
+      ../hosts/router
+    ];
+  };
+
   k8s-node = { ... }: {
-    networking.hostName = "node0";
+    networking.hostName = network.hosts.k8s-node.hostName;
     disko.devices.disk.main.device = "/dev/sda";
-    deployment.targetHost = "192.168.10.16";
-    deployment.targetUser = (import ../common/settings.nix).username;
-    imports = [ ../hosts/k8s-node.nix ];
+    deployment.targetHost = network.hosts.k8s-node.ip;
+    deployment.targetUser = "qajus";
+    imports = [
+      inputs.sops-nix.nixosModules.sops
+      ../hosts/k8s-node.nix
+    ];
   };
 }

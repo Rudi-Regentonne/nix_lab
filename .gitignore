@@ -1,2 +1,4 @@
 result
-settings.nix
+.direnv
+.devenv
+.bootstrap

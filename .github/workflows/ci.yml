@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify Secrets are Encrypted
+        run: |
+          nix-shell -p sops --run "./scripts/check-secrets-encrypted.sh"
+
+      - name: Check Router Flake Evaluation
+        run: |
+          nix build .#nixosConfigurations.router.config.system.build.toplevel --dry-run
+
+      - name: Check K8s-Node Flake Evaluation
+        run: |
+          nix build .#nixosConfigurations.k8s-node.config.system.build.toplevel --dry-run

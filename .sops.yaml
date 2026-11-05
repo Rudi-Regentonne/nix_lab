@@ -1,0 +1,13 @@
+keys:
+  # Admin (Frank laptop)
+  - &admin age1a54deu3flkxg98mcr99p9h5u65d5gvg7kudfqq4h7w2g8eclupjsuzvvtu
+
+  # Hosts
+  - &router age1v0hpny960m3w9unn6x0uxjrenj5thwtsvfdps7fk656p2yf3uvdq70suek
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    key_groups:
+      - age:
+          - *admin
+          - *router
