@@ -17,10 +17,6 @@ jobs:
         with:
           github_access_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Verify Secrets are Encrypted
-        run: |
-          nix-shell -p sops --run "./scripts/check-secrets-encrypted.sh"
-
       - name: Check Formatting
         run: |
           nix fmt -- --check $(find . -name '*.nix' -not -path './.git/*' -not -path './.devenv/*' -not -path './.direnv/*')

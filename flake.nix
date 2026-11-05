@@ -29,7 +29,14 @@
     }@inputs:
     let
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [
+          (final: prev: {
+            colmena = inputs.colmena.packages.${system}.colmena;
+          })
+        ];
+      };
     in
     {
       devShells.${system}.default = devenv.lib.mkShell {

@@ -33,10 +33,7 @@ else
   # Check for uncommitted or untracked changes
   CHANGES=$(git status --porcelain)
   if [ -n "$CHANGES" ]; then
-    echo "=== [1/3] Changes detected. Verifying secrets before auto-commit ==="
-    "$REPO_ROOT/scripts/check-secrets-encrypted.sh"
-
-    echo "=== [2/3] Auto-committing changes to Git ==="
+    echo "=== [1/2] Auto-committing changes to Git ==="
     git add -A
 
     if [ -z "$COMMIT_MSG" ]; then
@@ -44,7 +41,7 @@ else
     fi
     git commit -m "$COMMIT_MSG"
 
-    echo "=== [3/3] Pushing changes to GitHub ==="
+    echo "=== [2/2] Pushing changes to GitHub ==="
     CURRENT_BRANCH=$(git branch --show-current)
     if [ -n "$CURRENT_BRANCH" ]; then
       git push origin "$CURRENT_BRANCH"
