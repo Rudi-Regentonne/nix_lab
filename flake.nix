@@ -18,7 +18,15 @@
     };
   };
 
-  outputs = { self, nixpkgs, disko, colmena, sops-nix, devenv }@inputs:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      disko,
+      colmena,
+      sops-nix,
+      devenv,
+    }@inputs:
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
@@ -33,24 +41,35 @@
         inherit system;
         modules = [
           "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-          ({ pkgs, ... }: {
-            services.openssh.enable = true;
-            users.users.qajus = {
-              isNormalUser = true;
-              extraGroups = [ "wheel" ];
-              openssh.authorizedKeys.keys = [
-                "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK9XpFuOrdxXr5X2xxLDfcrvw6dKPM1fdjfnpkxrP4iU qajus@Frank"
-              ];
-            };
-            security.sudo.wheelNeedsPassword = false;
-            services.getty.autologinUser = pkgs.lib.mkForce "qajus";
-            nix.settings = {
-              experimental-features = [ "nix-command" "flakes" ];
-              trusted-users = [ "root" "qajus" ];
-            };
-          })
+          (
+            { pkgs, ... }:
+            {
+              services.openssh.enable = true;
+              users.users.qajus = {
+                isNormalUser = true;
+                extraGroups = [ "wheel" ];
+                openssh.authorizedKeys.keys = [
+                  "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK9XpFuOrdxXr5X2xxLDfcrvw6dKPM1fdjfnpkxrP4iU qajus@Frank"
+                ];
+              };
+              security.sudo.wheelNeedsPassword = false;
+              services.getty.autologinUser = pkgs.lib.mkForce "qajus";
+              nix.settings = {
+                experimental-features = [
+                  "nix-command"
+                  "flakes"
+                ];
+                trusted-users = [
+                  "root"
+                  "qajus"
+                ];
+              };
+            }
+          )
         ];
       };
+
+      formatter.${system} = pkgs.nixfmt;
 
       nixosConfigurations.router = nixpkgs.lib.nixosSystem {
         inherit system;
@@ -61,12 +80,13 @@
         ];
       };
 
-      nixosConfigurations.k8s-node = nixpkgs.lib.nixosSystem {
+      nixosConfigurations.compute = nixpkgs.lib.nixosSystem {
         inherit system;
         specialArgs = { inherit inputs; };
         modules = [
+          disko.nixosModules.disko
           sops-nix.nixosModules.sops
-          ./hosts/k8s-node.nix
+          ./hosts/compute.nix
         ];
       };
 

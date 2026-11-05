@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   network = import ../../common/network.nix;
@@ -28,10 +33,12 @@ in
 
     # LAN Interface
     interfaces.${network.hosts.router.lanInterface} = {
-      ipv4.addresses = [{
-        address = network.hosts.router.ip;
-        prefixLength = 24;
-      }];
+      ipv4.addresses = [
+        {
+          address = network.hosts.router.ip;
+          prefixLength = 24;
+        }
+      ];
     };
 
     # Network Address Translation (NAT)
@@ -44,7 +51,11 @@ in
     # Firewall Settings
     firewall = {
       enable = true;
-      allowedTCPPorts = [ 22 80 8082 ];
+      allowedTCPPorts = [
+        22
+        80
+        8082
+      ];
       trustedInterfaces = [ network.hosts.router.lanInterface ];
 
       extraCommands = ''
@@ -64,14 +75,16 @@ in
       interface = network.hosts.router.lanInterface;
       listen-address = network.hosts.router.ip;
       bind-interfaces = true;
-      server = [ "1.1.1.1" "8.8.8.8" ];
+      server = [
+        "1.1.1.1"
+        "8.8.8.8"
+      ];
 
       # Automatically generate DNS records for all hosts in the network inventory
       address = [
         "/router.${network.domain}/${network.hosts.router.ip}"
-      ] ++ (lib.mapAttrsToList (_: host:
-        "/${host.hostName}.${network.domain}/${host.ip}"
-      ) network.hosts);
+      ]
+      ++ (lib.mapAttrsToList (_: host: "/${host.hostName}.${network.domain}/${host.ip}") network.hosts);
     };
   };
 
@@ -105,13 +118,19 @@ in
             }
           ];
           # Automatically assign static IPs to any device that defines a MAC in network.hosts
-          reservations = lib.filter (x: x != null) (lib.mapAttrsToList (_: host:
-            if host ? mac then {
-              hw-address = host.mac;
-              ip-address = host.ip;
-              hostname = host.hostName;
-            } else null
-          ) network.hosts);
+          reservations = lib.filter (x: x != null) (
+            lib.mapAttrsToList (
+              _: host:
+              if host ? mac then
+                {
+                  hw-address = host.mac;
+                  ip-address = host.ip;
+                  hostname = host.hostName;
+                }
+              else
+                null
+            ) network.hosts
+          );
         }
       ];
     };
@@ -164,6 +183,9 @@ in
       }
     ];
   };
+
+  # Automatic daily upgrade from GitHub
+  lab.autoUpgrade.enable = true;
 
   system.stateVersion = "25.11";
 }

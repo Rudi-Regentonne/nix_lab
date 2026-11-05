@@ -19,7 +19,7 @@ rec {
       description = "Dell PowerConnect 2724 Core Switch";
     };
 
-    k8s-node = {
+    compute = {
       hostName = "node0";
       ip = "192.168.10.16";
       # mac = "bc:24:11:xx:xx:xx"; # Uncomment and set to enable static DHCP lease

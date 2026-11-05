@@ -1,0 +1,58 @@
+name: Daily Flake Update
+
+on:
+  schedule:
+    # 21:00 UTC daily
+    - cron: '0 21 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  flake-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v30
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Realize current router system closure
+        run: |
+          nix build .#nixosConfigurations.router.config.system.build.toplevel --out-link result-old
+
+      - name: Update flake inputs
+        run: |
+          nix flake update
+
+      - name: Verify updated configurations evaluate and build
+        run: |
+          # 1. Formatting check
+          nix fmt -- --check $(find . -name '*.nix' -not -path './.git/*' -not -path './.devenv/*' -not -path './.direnv/*')
+          # 2. Build updated router toplevel
+          nix build .#nixosConfigurations.router.config.system.build.toplevel --out-link result-new
+          # 3. Check compute node evaluation
+          nix build .#nixosConfigurations.compute.config.system.build.toplevel --dry-run
+
+      - name: Generate diff and commit
+        run: |
+          if git diff --quiet flake.lock; then
+            echo "No flake input changes detected."
+            exit 0
+          fi
+
+          # Generate package version diff via nvd
+          DIFF=$(nix run nixpkgs#nvd -- diff ./result-old ./result-new)
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add flake.lock
+          git commit -m "chore(flake): daily flake update $(date +'%Y-%m-%d')" -m "$DIFF"
+          git push origin main

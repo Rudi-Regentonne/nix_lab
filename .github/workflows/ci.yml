@@ -21,10 +21,14 @@ jobs:
         run: |
           nix-shell -p sops --run "./scripts/check-secrets-encrypted.sh"
 
+      - name: Check Formatting
+        run: |
+          nix fmt -- --check $(find . -name '*.nix' -not -path './.git/*' -not -path './.devenv/*' -not -path './.direnv/*')
+
       - name: Check Router Flake Evaluation
         run: |
           nix build .#nixosConfigurations.router.config.system.build.toplevel --dry-run
 
-      - name: Check K8s-Node Flake Evaluation
+      - name: Check Compute Node Flake Evaluation
         run: |
-          nix build .#nixosConfigurations.k8s-node.config.system.build.toplevel --dry-run
+          nix build .#nixosConfigurations.compute.config.system.build.toplevel --dry-run
