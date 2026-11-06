@@ -44,6 +44,9 @@
     exec "$REPO_DIR/scripts/flash-bootstick.sh" "$@"
   '';
 
+  scripts.fmt.exec = ''
+    ${pkgs.nixfmt-tree}/bin/treefmt .
+  '';
   enterShell = ''
     export SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
     export EDITOR="''${EDITOR:-nvim}"
@@ -55,5 +58,6 @@
     echo "  bootstrap-node <host> <ip> - Provision a fresh node via nixos-anywhere"
     echo "  deploy [-d|--dirty] [...]  - Auto-commit & push to Git, then colmena apply"
     echo "  flash-bootstick [device]   - Build and write headless ISO (e.g. /dev/sda)"
+    echo "  fmt "
   '';
 }
