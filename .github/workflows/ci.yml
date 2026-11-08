@@ -23,8 +23,12 @@ jobs:
 
       - name: Check Router Flake Evaluation
         run: |
-          nix build .#nixosConfigurations.router.config.system.build.toplevel --dry-run
+          nix build .#nixosConfigurations.renate.config.system.build.toplevel --dry-run
 
       - name: Check Compute Node Flake Evaluation
         run: |
-          nix build .#nixosConfigurations.compute.config.system.build.toplevel --dry-run
+          nix build .#nixosConfigurations.compute0.config.system.build.toplevel --dry-run
+
+      - name: Check Shrek VPS Flake Evaluation
+        run: |
+          nix build .#nixosConfigurations.shrek.config.system.build.toplevel --dry-run

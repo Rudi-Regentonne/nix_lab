@@ -25,7 +25,7 @@ jobs:
 
       - name: Realize current router system closure
         run: |
-          nix build .#nixosConfigurations.router.config.system.build.toplevel --out-link result-old
+          nix build .#nixosConfigurations.renate.config.system.build.toplevel --out-link result-old
 
       - name: Update flake inputs
         run: |
@@ -36,9 +36,11 @@ jobs:
           # 1. Formatting check
           nix fmt -- --check $(find . -name '*.nix' -not -path './.git/*' -not -path './.devenv/*' -not -path './.direnv/*')
           # 2. Build updated router toplevel
-          nix build .#nixosConfigurations.router.config.system.build.toplevel --out-link result-new
+          nix build .#nixosConfigurations.renate.config.system.build.toplevel --out-link result-new
           # 3. Check compute node evaluation
-          nix build .#nixosConfigurations.compute.config.system.build.toplevel --dry-run
+          nix build .#nixosConfigurations.compute0.config.system.build.toplevel --dry-run
+          # 4. Check shrek VPS evaluation
+          nix build .#nixosConfigurations.shrek.config.system.build.toplevel --dry-run
 
       - name: Generate diff and commit
         run: |

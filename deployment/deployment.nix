@@ -8,7 +8,7 @@ in
     specialArgs = { inherit inputs; };
   };
 
-  router =
+  renate =
     { ... }:
     {
       deployment.targetHost = network.hosts.router.ip;
@@ -19,7 +19,7 @@ in
       ];
     };
 
-  compute =
+  compute0 =
     { ... }:
     {
       networking.hostName = network.hosts.compute.hostName;
@@ -30,6 +30,20 @@ in
         inputs.disko.nixosModules.disko
         inputs.sops-nix.nixosModules.sops
         ../hosts/compute.nix
+      ];
+    };
+
+  shrek =
+    { ... }:
+    {
+      networking.hostName = network.hosts.shrek.hostName;
+      disko.devices.disk.main.device = network.hosts.shrek.disk;
+      deployment.targetHost = network.hosts.shrek.ip;
+      deployment.targetUser = "qajus";
+      imports = [
+        inputs.disko.nixosModules.disko
+        inputs.sops-nix.nixosModules.sops
+        ../hosts/shrek.nix
       ];
     };
 }

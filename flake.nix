@@ -78,7 +78,7 @@
 
       formatter.${system} = pkgs.nixfmt;
 
-      nixosConfigurations.router = nixpkgs.lib.nixosSystem {
+      nixosConfigurations.renate = nixpkgs.lib.nixosSystem {
         inherit system;
         specialArgs = { inherit inputs; };
         modules = [
@@ -87,13 +87,23 @@
         ];
       };
 
-      nixosConfigurations.compute = nixpkgs.lib.nixosSystem {
+      nixosConfigurations.compute0 = nixpkgs.lib.nixosSystem {
         inherit system;
         specialArgs = { inherit inputs; };
         modules = [
           disko.nixosModules.disko
           sops-nix.nixosModules.sops
           ./hosts/compute.nix
+        ];
+      };
+
+      nixosConfigurations.shrek = nixpkgs.lib.nixosSystem {
+        inherit system;
+        specialArgs = { inherit inputs; };
+        modules = [
+          disko.nixosModules.disko
+          sops-nix.nixosModules.sops
+          ./hosts/shrek.nix
         ];
       };
 
