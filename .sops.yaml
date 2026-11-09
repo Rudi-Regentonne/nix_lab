@@ -3,6 +3,7 @@ keys:
   - &admin age1a54deu3flkxg98mcr99p9h5u65d5gvg7kudfqq4h7w2g8eclupjsuzvvtu
 
   # Hosts
+  - &compute0 age1xdtl8m5mzg4dqg5rz56frx20qdhh9gwc0vfjck7vf79fnm9exs4qg2emt6
   - &shrek age1tt7tr8mv8kryfphvn4aakufnspxsnw68xd975q7hcwszjph7e9vsjjg3uc
   - &router age1v0hpny960m3w9unn6x0uxjrenj5thwtsvfdps7fk656p2yf3uvdq70suek
 
@@ -11,5 +12,6 @@ creation_rules:
     key_groups:
       - age:
           - *admin
+          - *compute0
           - *shrek
           - *router

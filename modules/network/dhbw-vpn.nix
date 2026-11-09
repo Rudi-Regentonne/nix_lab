@@ -52,24 +52,50 @@ let
     apply_split_routes() {
       flush_split_routes
 
-      DNS=""
-      if [ -n "''${INTERNAL_IP4_DNS:-}" ]; then
-        DNS="$(echo "$INTERNAL_IP4_DNS" | awk '{print $1}')"
+      BIND=""
+      if [ -n "''${INTERNAL_IP4_ADDRESS:-}" ]; then
+        BIND="-b $INTERNAL_IP4_ADDRESS"
       fi
+
+      # Send DNS queries through the tun, not WAN/shrek.
+      DNS_SERVERS=""
+      if [ -n "''${INTERNAL_IP4_DNS:-}" ]; then
+        DNS_SERVERS="$INTERNAL_IP4_DNS"
+        for dns in $DNS_SERVERS; do
+          ip route replace "$dns/32" dev "$TUNDEV" 2>/dev/null || true
+        done
+      fi
+      echo "dhbw-vpn: VPN DNS=''${INTERNAL_IP4_DNS:-none} bind=''${INTERNAL_IP4_ADDRESS:-none}"
+
+      resolve_host() {
+        local host="$1"
+        local ips=""
+        local dns
+        for dns in $DNS_SERVERS; do
+          ips="$(dig +short +time=2 +tries=2 $BIND "$host" A @"$dns" 2>/dev/null | grep -E '^[0-9.]+$' || true)"
+          [ -n "$ips" ] && break
+        done
+        if [ -z "$ips" ] && [ -n "$BIND" ]; then
+          ips="$(dig +short +time=2 +tries=2 $BIND "$host" A 2>/dev/null | grep -E '^[0-9.]+$' || true)"
+        fi
+        echo "$ips"
+      }
 
       while IFS= read -r host || [ -n "$host" ]; do
         host="$(echo "$host" | tr -d ' \t\r')"
         [ -z "$host" ] && continue
 
         ips=""
-        if [ -n "$DNS" ]; then
-          ips="$(dig +short "$host" A @"$DNS" | grep -E '^[0-9.]+$' || true)"
-        fi
+        attempt=1
+        while [ "$attempt" -le 3 ]; do
+          ips="$(resolve_host "$host")"
+          [ -n "$ips" ] && break
+          sleep 1
+          attempt=$((attempt + 1))
+        done
+
         if [ -z "$ips" ]; then
-          ips="$(getent ahostsv4 "$host" 2>/dev/null | awk '{print $1}' | sort -u || true)"
-        fi
-        if [ -z "$ips" ]; then
-          echo "dhbw-vpn: could not resolve $host" >&2
+          echo "dhbw-vpn: could not resolve $host via VPN DNS" >&2
           continue
         fi
 
@@ -173,7 +199,7 @@ in
       ];
       description = ''
         Hosts or URLs whose traffic is sent through the DHBW VPN.
-        Everything else from the LAN keeps using the WireGuard exit to shrek.
+        Everything else keeps using the normal internet exit (shrek WAN).
       '';
     };
   };
@@ -238,8 +264,8 @@ in
     networking.firewall.trustedInterfaces = [ cfg.interface ];
 
     networking.firewall.extraCommands = ''
-      iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${cfg.interface} -j ACCEPT
-      iptables -A FORWARD -i ${cfg.interface} -o ${network.hosts.router.lanInterface} -m state --state ESTABLISHED,RELATED -j ACCEPT
+      iptables -A FORWARD -i ${network.wireguard.interface} -o ${cfg.interface} -j ACCEPT
+      iptables -A FORWARD -i ${cfg.interface} -o ${network.wireguard.interface} -m state --state ESTABLISHED,RELATED -j ACCEPT
       iptables -t nat -A POSTROUTING -o ${cfg.interface} -j MASQUERADE
       iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o ${cfg.interface} -j TCPMSS --clamp-mss-to-pmtu
     '';

@@ -46,7 +46,7 @@ if ! grep -q "&${HOSTNAME} " .sops.yaml; then
     /key_groups:/ { in_kg=1; print; next }
     in_kg && /- \*/ { print; print "          - *" host; in_kg=0; next }
     { print }
-  ' .sops.yaml > .sops.yaml.tmp && mv .sops.yaml.tmp .sops.yaml
+  ' .sops.yaml >.sops.yaml.tmp && mv .sops.yaml.tmp .sops.yaml
   echo "✓ Added ${HOSTNAME} to .sops.yaml"
 else
   echo "✓ ${HOSTNAME} already exists in .sops.yaml"
@@ -57,14 +57,14 @@ sops updatekeys -y secrets/secrets.yaml
 echo "✓ Secrets successfully re-encrypted with new host key"
 
 echo "=== [4/4] Provisioning with nixos-anywhere ==="
-echo "Target host: root@${IP}"
+echo "Target host: qajus@${IP}"
 echo "Flake target: .#${HOSTNAME}"
 read -p "Execute nixos-anywhere deployment now? (y/N): " -r CONFIRM
 if [[ "$CONFIRM" =~ ^[Yy]$ ]]; then
   nixos-anywhere \
     --extra-files "${BOOTSTRAP_DIR}" \
     --flake ".#${HOSTNAME}" \
-    "root@${IP}"
+    "qajus@${IP}"
   echo "✓ Provisioning complete! Future updates can be deployed with: colmena apply --on ${HOSTNAME}"
 else
   echo "Skipped live install. Host keys and SOPS encryption are ready."

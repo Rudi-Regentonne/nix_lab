@@ -12,7 +12,6 @@ in
   imports = [
     ./hardware-configuration.nix
     ../../common
-    ../../modules/network/dhbw-vpn.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
@@ -27,17 +26,6 @@ in
   # SOPS secrets for WireGuard exit tunnel
   sops.secrets."wireguard/renate-private" = { };
   sops.secrets."shrek-public-ip" = { };
-
-  # DHBW connect
-  services.dhbw-vpn = {
-    enable = true;
-    redirectHosts = [
-      "juris.de"
-      "katalog.bibliothek.kit.edu"
-      "db1.inf.dh-karlsruhe.de"
-      "db2.inf.dh-karlsruhe.de"
-    ];
-  };
 
   # Networking & NAT
   networking = {

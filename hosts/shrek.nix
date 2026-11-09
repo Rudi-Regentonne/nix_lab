@@ -12,6 +12,7 @@ in
   imports = [
     ../disko.nix
     ../common
+    ../modules/network/dhbw-vpn.nix
   ];
 
   networking.hostName = network.hosts.shrek.hostName;
@@ -44,6 +45,17 @@ in
 
   # SOPS secrets for Shrek
   sops.secrets."wireguard/shrek-private" = { };
+
+  services.dhbw-vpn = {
+    enable = true;
+    redirectHosts = [
+      "juris.de"
+      "www.juris.de"
+      "katalog.bibliothek.kit.edu"
+      "db1.inf.dh-karlsruhe.de"
+      "db2.inf.dh-karlsruhe.de"
+    ];
+  };
 
   networking = {
     useDHCP = true;

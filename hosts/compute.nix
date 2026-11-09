@@ -14,7 +14,7 @@ in
   ];
 
   networking.hostName = network.hosts.compute.hostName;
-
+  disko.devices.disk.main.device = "/dev/sda";
   # Container Runtime: Podman with Docker CLI compatibility (like Dominik)
   virtualisation = {
     podman = {
