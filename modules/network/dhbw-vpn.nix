@@ -215,9 +215,9 @@ in
     boot.kernelModules = [ "tun" ];
 
     sops.secrets = {
-      "dhbw-vpn-username" = { };
-      "dhbw-vpn-password" = { };
-      "dhbw-vpn-2fa-secret" = { };
+      "dhbw-vpn-username".sopsFile = ../../secrets/vpn-shared.yaml;
+      "dhbw-vpn-password".sopsFile = ../../secrets/vpn-shared.yaml;
+      "dhbw-vpn-2fa-secret".sopsFile = ../../secrets/vpn-shared.yaml;
     };
 
     systemd.services.dhbw-vpn = {

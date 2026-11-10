@@ -1,0 +1,38 @@
+version: 1
+metadata:
+  name: Altero OIDC application
+entries:
+  - model: authentik_providers_oauth2.oauth2provider
+    state: present
+    identifiers:
+      name: altero-provider
+    attrs:
+      name: altero-provider
+      client_type: confidential
+      client_id: altero
+      client_secret: !Env ALTERO_OIDC_CLIENT_SECRET
+      grant_types:
+        - authorization_code
+      redirect_uris:
+        - matching_mode: strict
+          url: https://altero.rudiregentonne.de/web/auth/sso/authentik/callback
+      issuer_mode: per_provider
+      sub_mode: hashed_user_id
+      include_claims_in_id_token: true
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [name, "authentik default OAuth Mapping: OpenID 'openid'"]]
+        - !Find [authentik_providers_oauth2.scopemapping, [name, "authentik default OAuth Mapping: OpenID 'email'"]]
+        - !Find [authentik_providers_oauth2.scopemapping, [name, "authentik default OAuth Mapping: OpenID 'profile'"]]
+
+  - model: authentik_core.application
+    state: present
+    identifiers:
+      slug: altero
+    attrs:
+      name: Altero
+      provider: !Find [authentik_providers_oauth2.oauth2provider, [name, altero-provider]]
+      meta_launch_url: https://altero.rudiregentonne.de/
+      policy_engine_mode: any

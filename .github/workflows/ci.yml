@@ -19,7 +19,8 @@ jobs:
 
       - name: Check Formatting
         run: |
-          nix fmt -- --check $(find . -name '*.nix' -not -path './.git/*' -not -path './.devenv/*' -not -path './.direnv/*')
+          mapfile -d '' nix_files < <(find . -name '*.nix' -not -path './.git/*' -not -path './.devenv/*' -not -path './.direnv/*' -print0)
+          nix fmt -- --check "${nix_files[@]}"
 
       - name: Check Router Flake Evaluation
         run: |

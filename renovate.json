@@ -1,0 +1,46 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 5,
+  "minimumReleaseAge": "3 days",
+  "nix": {
+    "enabled": false
+  },
+  "ignoreUnstable": true,
+  "packageRules": [
+    {
+      "description": "Pin and update OCI image digests",
+      "matchDatasources": ["docker"],
+      "pinDigests": true
+    },
+    {
+      "description": "Keep Authentik containers on one release",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/goauthentik/**"],
+      "groupName": "authentik"
+    },
+    {
+      "description": "Allow Altero beta updates until a stable release exists",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/eseifert/altero"],
+      "ignoreUnstable": false
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    }
+  ],
+  "customManagers": [
+    {
+      "description": "OCI image references in Nix modules",
+      "customType": "regex",
+      "fileMatch": ["\\.nix$"],
+      "matchStrings": [
+        "image\\s*=\\s*\"(?<depName>[^\"@:]+):(?<currentValue>[^\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?\";"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ]
+}

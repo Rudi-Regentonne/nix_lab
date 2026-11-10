@@ -13,6 +13,8 @@ in
     ../disko.nix
     ../common
     ../modules/network/dhbw-vpn.nix
+    ../modules/services/network/edge-proxy.nix
+    ../modules/security/crowdsec.nix
   ];
 
   networking.hostName = network.hosts.shrek.hostName;
@@ -44,7 +46,11 @@ in
   };
 
   # SOPS secrets for Shrek
-  sops.secrets."wireguard/shrek-private" = { };
+  sops.secrets."wireguard/shrek-private".sopsFile = ../secrets/shrek.yaml;
+  sops.secrets."wireguard-ingress-private" = {
+    sopsFile = ../secrets/shrek.yaml;
+    mode = "0400";
+  };
 
   services.dhbw-vpn = {
     enable = true;
@@ -66,8 +72,13 @@ in
       allowedUDPPorts = [
         wg.port
         wg.clientPort
+        network.ingressWireguard.port
       ];
-      allowedTCPPorts = [ 22 ];
+      allowedTCPPorts = [
+        22
+        80
+        443
+      ];
       trustedInterfaces = [ wg.interface ];
       checkReversePath = "loose";
 
@@ -123,9 +134,24 @@ in
         ];
       }) wg.clients);
     };
+
+    wireguard.interfaces.${network.ingressWireguard.interface} = {
+      ips = [ "${network.ingressWireguard.shrek.address}/24" ];
+      listenPort = network.ingressWireguard.port;
+      privateKeyFile = config.sops.secrets."wireguard-ingress-private".path;
+      mtu = 1420;
+      peers = [
+        {
+          name = "compute0-ingress";
+          publicKey = network.ingressWireguard.compute.publicKey;
+          allowedIPs = [ "${network.ingressWireguard.compute.address}/32" ];
+        }
+      ];
+    };
   };
 
   systemd.services."wireguard-${wg.interface}".after = [ "sops-nix.service" ];
+  systemd.services."wireguard-${network.ingressWireguard.interface}".after = [ "sops-nix.service" ];
 
   # DNS resolver on Shrek
   services.dnsmasq = {

@@ -24,8 +24,8 @@ in
   };
 
   # SOPS secrets for WireGuard exit tunnel
-  sops.secrets."wireguard/renate-private" = { };
-  sops.secrets."shrek-public-ip" = { };
+  sops.secrets."wireguard/renate-private".sopsFile = ../../secrets/router.yaml;
+  sops.secrets."shrek-public-ip".sopsFile = ../../secrets/router.yaml;
 
   # Networking & NAT
   networking = {

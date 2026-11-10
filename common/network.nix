@@ -2,8 +2,23 @@
 # Single source of truth for hosts, IPs, and DHCP reservations.
 rec {
   domain = "home";
+  publicDomain = "rudiregentonne.de";
+  acmeEmail = "admin@rudiregentonne.de";
   subnet = "192.168.10.0/24";
   gateway = "192.168.10.1";
+
+  # Dedicated public-ingress tunnel. The VPS terminates TLS and forwards HTTP
+  # to compute0 without exposing the home LAN or application ports directly.
+  ingressWireguard = {
+    interface = "wg-ingress";
+    port = 51821;
+    subnet = "10.20.0.0/24";
+    shrek.address = "10.20.0.1";
+    compute.address = "10.20.0.2";
+    # Public keys are populated alongside the encrypted private keys.
+    shrek.publicKey = "LmAZAKMHf0PBOmODp+Znj4ixtce8LYLCDSPwoDuS2Ek=";
+    compute.publicKey = "LEBv7AQTiGs9FtrPudSN90954HjwZjpVGofwi/DDSyg=";
+  };
 
   # Hub-and-spoke WireGuard overlay:
   #   LAN -> Renate --wg--> shrek -> internet
@@ -65,8 +80,8 @@ rec {
 
     compute = {
       hostName = "compute0";
+      lanInterface = "enp8s0u1";
       ip = "192.168.10.16";
-      # mac = "bc:24:11:xx:xx:xx"; # Static DHCP reservation
     };
 
     nas = {

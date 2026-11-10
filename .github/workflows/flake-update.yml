@@ -34,7 +34,8 @@ jobs:
       - name: Verify updated configurations evaluate and build
         run: |
           # 1. Formatting check
-          nix fmt -- --check $(find . -name '*.nix' -not -path './.git/*' -not -path './.devenv/*' -not -path './.direnv/*')
+          mapfile -d '' nix_files < <(find . -name '*.nix' -not -path './.git/*' -not -path './.devenv/*' -not -path './.direnv/*' -print0)
+          nix fmt -- --check "${nix_files[@]}"
           # 2. Build updated router toplevel
           nix build .#nixosConfigurations.renate.config.system.build.toplevel --out-link result-new
           # 3. Check compute node evaluation
