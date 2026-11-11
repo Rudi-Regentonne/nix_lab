@@ -4,6 +4,7 @@ let
   network = import ../../../common/network.nix;
   authHost = "auth.${network.publicDomain}";
   alteroHost = "altero.${network.publicDomain}";
+  immichHost = "immich.${network.domain}";
 in
 {
   services.traefik = {
@@ -20,11 +21,16 @@ in
           queryParameters.defaultMode = "drop";
         };
       };
-      entryPoints.internal = {
-        address = "${network.ingressWireguard.compute.address}:8080";
-        forwardedHeaders = {
-          insecure = false;
-          trustedIPs = [ "${network.ingressWireguard.shrek.address}/32" ];
+      entryPoints = {
+        internal = {
+          address = "${network.ingressWireguard.compute.address}:8080";
+          forwardedHeaders = {
+            insecure = false;
+            trustedIPs = [ "${network.ingressWireguard.shrek.address}/32" ];
+          };
+        };
+        lan = {
+          address = "${network.hosts.compute.ip}:80";
         };
       };
     };
@@ -41,10 +47,16 @@ in
           entryPoints = [ "internal" ];
           service = "altero";
         };
+        immich = {
+          rule = "Host(`${immichHost}`)";
+          entryPoints = [ "lan" ];
+          service = "immich";
+        };
       };
       services = {
         authentik.loadBalancer.servers = [ { url = "http://127.0.0.1:9000"; } ];
         altero.loadBalancer.servers = [ { url = "http://127.0.0.1:8000"; } ];
+        immich.loadBalancer.servers = [ { url = "http://127.0.0.1:2283"; } ];
       };
     };
   };

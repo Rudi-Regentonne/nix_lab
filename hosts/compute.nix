@@ -18,6 +18,8 @@ in
     ../modules/services/containers/authentik.nix
     ../modules/services/containers/altero.nix
     ../modules/services/backup/zotero-backup.nix
+    ../modules/services/storage/nas.nix
+    ../modules/services/containers/immich.nix
   ];
 
   networking = {
@@ -41,6 +43,8 @@ in
     firewall = {
       enable = true;
       interfaces.${network.ingressWireguard.interface}.allowedTCPPorts = [ 8080 ];
+      # Immich is reachable only through the LAN Traefik entrypoint.
+      interfaces.${network.hosts.compute.lanInterface}.allowedTCPPorts = [ 80 ];
       checkReversePath = "loose";
     };
 
@@ -67,6 +71,23 @@ in
   };
 
   disko.devices.disk.main.device = "/dev/sda";
+
+  # NAS and ZFS storage management
+  lab.nas = {
+    enable = true;
+    hostId = "50faf9e4";
+    poolName = "Paul";
+    arcMaxGiB = 16;
+    autoImport = false; # Set to true once drive checks are complete
+  };
+
+  # Immich photo and video management (LAN only)
+  lab.immich = {
+    enable = true;
+    autoStart = false; # Set to true once data and DB restore is verified
+    acceleration = "nvidia";
+  };
+
   # Container Runtime: Podman with Docker CLI compatibility (like Dominik)
   virtualisation = {
     podman = {

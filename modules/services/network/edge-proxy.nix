@@ -27,7 +27,7 @@ let
         proxy_read_timeout 3600s;
         proxy_send_timeout 3600s;
         proxy_intercept_errors on;
-        error_page 502 504 =503 @backend_unavailable;
+        error_page 400 401 403 404 405 429 500 502 503 504 = @cat_error;
 
         ${lib.optionalString (
           rateZone != null
@@ -42,12 +42,11 @@ let
       '';
     };
 
-  unavailableLocation = {
+  catErrorLocation = {
     extraConfig = ''
       internal;
       default_type text/html;
-      add_header Retry-After 60 always;
-      return 503 '<!doctype html><html><head><title>Service unavailable</title></head><body><h1>Service temporarily unavailable</h1><p>GRRRRR</p></body></html>';
+      return 503 '<!doctype html><meta charset="utf-8"><style>html,body{margin:0;height:100%;background:#000;display:flex;align-items:center;justify-content:center}img{display:block;max-width:100vw;max-height:100vh}</style><img src="https://http.cat/$status">';
     '';
   };
 in
@@ -104,7 +103,7 @@ in
           "/" = proxyLocation {
             connectionLimit = 200;
           };
-          "@backend_unavailable" = unavailableLocation;
+          "@cat_error" = catErrorLocation;
         };
       };
 
@@ -116,7 +115,7 @@ in
           # UI share this endpoint. Generic edge limits break valid clients;
           # CrowdSec remains responsible for blocking abusive addresses.
           "/" = proxyLocation { };
-          "@backend_unavailable" = unavailableLocation;
+          "@cat_error" = catErrorLocation;
         };
       };
     };

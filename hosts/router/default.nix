@@ -146,6 +146,7 @@ in
       # Automatically generate DNS records for all hosts in the network inventory
       address = [
         "/router.${network.domain}/${network.hosts.router.ip}"
+        "/immich.${network.domain}/${network.hosts.compute.ip}"
       ]
       ++ (lib.mapAttrsToList (_: host: "/${host.hostName}.${network.domain}/${host.ip}") network.hosts);
     };

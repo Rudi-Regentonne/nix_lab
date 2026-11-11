@@ -21,6 +21,12 @@
       "groupName": "authentik"
     },
     {
+      "description": "Keep Immich server and machine learning on one release",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/immich-app/**"],
+      "groupName": "immich"
+    },
+    {
       "description": "Allow Altero beta updates until a stable release exists",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/eseifert/altero"],
