@@ -9,7 +9,11 @@ with lib;
 let
   cfg = config.lab.immich;
   nvidiaEnabled = cfg.acceleration == "nvidia";
+  nvidiaMachineLearningEnabled = nvidiaEnabled && cfg.nvidiaMachineLearning;
   gpuOptions = optionals nvidiaEnabled [ "--device=nvidia.com/gpu=all" ];
+  machineLearningGpuOptions = optionals nvidiaMachineLearningEnabled [
+    "--device=nvidia.com/gpu=all"
+  ];
   hardenedOptions = [
     "--network=host"
     "--security-opt=no-new-privileges"
@@ -44,7 +48,13 @@ in
         "nvidia"
       ];
       default = "cpu";
-      description = "Hardware acceleration backend for transcoding and machine learning";
+      description = "Hardware acceleration backend exposed to the Immich server for transcoding";
+    };
+
+    nvidiaMachineLearning = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Use the CUDA machine-learning image when NVIDIA acceleration is enabled";
     };
   };
 
@@ -74,7 +84,7 @@ in
 
         immich-machine-learning = {
           image =
-            if nvidiaEnabled then
+            if nvidiaMachineLearningEnabled then
               "ghcr.io/immich-app/immich-machine-learning:v3.4.1-cuda"
             else
               "ghcr.io/immich-app/immich-machine-learning:v3.4.1";
@@ -85,7 +95,7 @@ in
             IMMICH_HOST = "127.0.0.1";
             MACHINE_LEARNING_MODEL_REVISION = "v2";
           };
-          extraOptions = hardenedOptions ++ gpuOptions;
+          extraOptions = hardenedOptions ++ machineLearningGpuOptions;
           volumes = [
             "/var/cache/immich-machine-learning:/cache"
           ];

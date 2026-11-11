@@ -82,14 +82,17 @@ in
     hostId = "50faf9e4";
     poolName = "Paul";
     arcMaxGiB = 16;
-    autoImport = false; # Set to true once drive checks are complete
+    autoImport = true;
   };
 
-  # Immich photo and video management (LAN only)
+  # Immich photo and video management
   lab.immich = {
     enable = true;
-    autoStart = false; # Set to true once data and DB restore is verified
+    autoStart = true;
     acceleration = "nvidia";
+    # The 2GB Turing T400 produced invalid null embeddings with the v3.4.1
+    # CUDA/TensorRT stack. Keep it available for NVENC, but run ML on CPU.
+    nvidiaMachineLearning = false;
   };
 
   # Container Runtime: Podman with Docker CLI compatibility (like Dominik)
