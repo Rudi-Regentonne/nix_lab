@@ -20,6 +20,20 @@ rec {
     compute.publicKey = "LEBv7AQTiGs9FtrPudSN90954HjwZjpVGofwi/DDSyg=";
   };
 
+  # RustDesk runs on compute0 and is exposed by shrek over wg-ingress.
+  # The web-client ports (21118/21119) intentionally remain closed.
+  rustdesk = {
+    publicHost = "rustdesk.${publicDomain}";
+    serverAddress = ingressWireguard.compute.address;
+    relayPort = 21117;
+    tcpPorts = [
+      21115
+      21116
+      21117
+    ];
+    udpPorts = [ 21116 ];
+  };
+
   # Hub-and-spoke WireGuard overlay:
   #   LAN -> Renate --wg--> shrek -> internet
   #   phones/laptops --wg--> shrek -> LAN (and internet)

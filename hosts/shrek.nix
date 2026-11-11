@@ -14,6 +14,7 @@ in
     ../common
     ../modules/network/dhbw-vpn.nix
     ../modules/services/network/edge-proxy.nix
+    ../modules/services/network/rustdesk-ingress.nix
     ../modules/security/crowdsec.nix
   ];
 

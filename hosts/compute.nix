@@ -17,6 +17,7 @@ in
     ../modules/services/network/traefik.nix
     ../modules/services/containers/authentik.nix
     ../modules/services/containers/altero.nix
+    ../modules/services/containers/rustdesk-server.nix
     ../modules/services/backup/zotero-backup.nix
     ../modules/services/storage/nas.nix
     ../modules/services/containers/immich.nix
@@ -42,7 +43,10 @@ in
 
     firewall = {
       enable = true;
-      interfaces.${network.ingressWireguard.interface}.allowedTCPPorts = [ 8080 ];
+      interfaces.${network.ingressWireguard.interface} = {
+        allowedTCPPorts = [ 8080 ] ++ network.rustdesk.tcpPorts;
+        allowedUDPPorts = network.rustdesk.udpPorts;
+      };
       # Immich is reachable only through the LAN Traefik entrypoint.
       interfaces.${network.hosts.compute.lanInterface}.allowedTCPPorts = [ 80 ];
       checkReversePath = "loose";
