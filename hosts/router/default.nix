@@ -90,6 +90,10 @@ in
         ip rule del to 194.25.134.0/24 table main 2>/dev/null || true
         ip rule add to 194.25.134.0/24 table main priority 950
 
+        # Route traffic to Renate's physical WAN subnet (ESPHome & local upstream devices) via table main
+        ip rule del to 100.85.116.0/24 table main 2>/dev/null || true
+        ip rule add to 100.85.116.0/24 table main priority 951
+
         # Direct all home LAN traffic to the WireGuard exit table
         ip rule add from ${network.subnet} table 51820 priority 1000
       '';
@@ -99,6 +103,7 @@ in
         ip rule del to ${network.subnet} table main 2>/dev/null || true
         ip rule del to ${network.wireguard.subnet} table main 2>/dev/null || true
         ip rule del to 194.25.134.0/24 table main 2>/dev/null || true
+        ip rule del to 100.85.116.0/24 table main 2>/dev/null || true
         ip route flush table 51820 2>/dev/null || true
       '';
     };
@@ -128,6 +133,11 @@ in
         iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -d 194.25.134.0/24 -p tcp -m multiport --dports 465,587,993 -j ACCEPT
         iptables -A FORWARD -i ${network.hosts.router.wanInterface} -o ${network.hosts.router.lanInterface} -s 194.25.134.0/24 -p tcp -m multiport --sports 465,587,993 -m state --state ESTABLISHED,RELATED -j ACCEPT
         iptables -t nat -A POSTROUTING -o ${network.hosts.router.wanInterface} -d 194.25.134.0/24 -p tcp -m multiport --dports 465,587,993 -j MASQUERADE
+
+        # Allow LAN (Home Assistant) to reach upstream devices (e.g. ESPHome) on physical WAN
+        iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -d 100.85.116.0/24 -j ACCEPT
+        iptables -A FORWARD -i ${network.hosts.router.wanInterface} -o ${network.hosts.router.lanInterface} -s 100.85.116.0/24 -m state --state ESTABLISHED,RELATED -j ACCEPT
+        iptables -t nat -A POSTROUTING -o ${network.hosts.router.wanInterface} -d 100.85.116.0/24 -j MASQUERADE
 
         # Prevent un-tunneled internet leaks from LAN out physical WAN
         iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -j REJECT --reject-with icmp-net-unreachable
@@ -161,6 +171,9 @@ in
       address = [
         "/router.${network.domain}/${network.hosts.router.ip}"
         "/immich.${network.domain}/${network.hosts.compute.ip}"
+        "/hass.${network.domain}/${network.hosts.compute.ip}"
+        "/z2m.${network.domain}/${network.hosts.compute.ip}"
+        "/mealie.${network.domain}/${network.hosts.compute.ip}"
       ]
       ++ (lib.mapAttrsToList (_: host: "/${host.hostName}.${network.domain}/${host.ip}") network.hosts);
     };

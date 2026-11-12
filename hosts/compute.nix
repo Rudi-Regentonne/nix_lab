@@ -21,6 +21,8 @@ in
     ../modules/services/backup/zotero-backup.nix
     ../modules/services/storage/nas.nix
     ../modules/services/containers/immich.nix
+    ../modules/services/containers/homeassistant.nix
+    ../modules/services/containers/mealie.nix
   ];
 
   networking = {
@@ -48,8 +50,22 @@ in
         allowedUDPPorts = network.rustdesk.udpPorts;
       };
       # Immich is reachable only through the LAN Traefik entrypoint.
-      interfaces.${network.hosts.compute.lanInterface}.allowedTCPPorts = [ 80 ];
+      interfaces.${network.hosts.compute.lanInterface} = {
+        allowedTCPPorts = [
+          80 # Traefik LAN HTTP (Immich, Hass, Z2M, Mealie)
+          1400 # Sonos HTTP control
+        ];
+        allowedUDPPorts = [
+          1900 # SSDP / UPnP discovery (Sonos)
+          5353 # mDNS discovery (ESPHome, HomeKit, Sonos)
+        ];
+      };
       checkReversePath = "loose";
+
+      extraCommands = ''
+        # Clamp MSS to PMTU over wg-ingress to eliminate packet fragmentation delays
+        iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o ${network.ingressWireguard.interface} -j TCPMSS --clamp-mss-to-pmtu
+      '';
     };
 
     wireguard.interfaces.${network.ingressWireguard.interface} = {
@@ -93,6 +109,18 @@ in
     # The 2GB Turing T400 produced invalid null embeddings with the v3.4.1
     # CUDA/TensorRT stack. Keep it available for NVENC, but run ML on CPU.
     nvidiaMachineLearning = false;
+  };
+
+  # Home Assistant smart home automation
+  lab.homeassistant = {
+    enable = true;
+    autoStart = true;
+  };
+
+  # Mealie recipe management
+  lab.mealie = {
+    enable = true;
+    autoStart = true;
   };
 
   # Container Runtime: Podman with Docker CLI compatibility (like Dominik)

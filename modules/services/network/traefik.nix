@@ -4,7 +4,13 @@ let
   network = import ../../../common/network.nix;
   authHost = "auth.${network.publicDomain}";
   alteroHost = "altero.${network.publicDomain}";
+  hassPublicHost = "hass.${network.publicDomain}";
+  immichPublicHost = "immich.${network.publicDomain}";
   immichHost = "immich.${network.domain}";
+  hassHost = "hass.${network.domain}";
+  z2mHost = "z2m.${network.domain}";
+  mealieHost = "mealie.${network.domain}";
+  mealiePublicHost = "mealie.${network.publicDomain}";
 in
 {
   services.traefik = {
@@ -48,15 +54,42 @@ in
           service = "altero";
         };
         immich = {
-          rule = "Host(`${immichHost}`)";
-          entryPoints = [ "lan" ];
+          rule = "Host(`${immichHost}`) || Host(`${immichPublicHost}`)";
+          entryPoints = [
+            "lan"
+            "internal"
+          ];
           service = "immich";
+        };
+        homeassistant = {
+          rule = "Host(`${hassHost}`) || Host(`${hassPublicHost}`)";
+          entryPoints = [
+            "lan"
+            "internal"
+          ];
+          service = "homeassistant";
+        };
+        zigbee2mqtt = {
+          rule = "Host(`${z2mHost}`)";
+          entryPoints = [ "lan" ];
+          service = "zigbee2mqtt";
+        };
+        mealie = {
+          rule = "Host(`${mealieHost}`) || Host(`${mealiePublicHost}`)";
+          entryPoints = [
+            "lan"
+            "internal"
+          ];
+          service = "mealie";
         };
       };
       services = {
         authentik.loadBalancer.servers = [ { url = "http://127.0.0.1:9000"; } ];
         altero.loadBalancer.servers = [ { url = "http://127.0.0.1:8000"; } ];
         immich.loadBalancer.servers = [ { url = "http://127.0.0.1:2283"; } ];
+        homeassistant.loadBalancer.servers = [ { url = "http://127.0.0.1:8123"; } ];
+        zigbee2mqtt.loadBalancer.servers = [ { url = "http://127.0.0.1:8080"; } ];
+        mealie.loadBalancer.servers = [ { url = "http://127.0.0.1:9002"; } ];
       };
     };
   };

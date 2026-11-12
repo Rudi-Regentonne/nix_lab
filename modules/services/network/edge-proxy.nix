@@ -26,8 +26,7 @@ let
         proxy_connect_timeout 3s;
         proxy_read_timeout 3600s;
         proxy_send_timeout 3600s;
-        proxy_intercept_errors on;
-        error_page 400 401 403 404 405 429 500 502 503 504 = @cat_error;
+        proxy_intercept_errors off;
 
         ${lib.optionalString (
           rateZone != null
@@ -115,6 +114,52 @@ in
           # UI share this endpoint. Generic edge limits break valid clients;
           # CrowdSec remains responsible for blocking abusive addresses.
           "/" = proxyLocation { };
+          "@cat_error" = catErrorLocation;
+        };
+      };
+
+      "hass.${network.publicDomain}" = {
+        enableACME = true;
+        forceSSL = true;
+        locations = {
+          # Home Assistant web UI, mobile app push/SSE, and WebSockets.
+          "/" = proxyLocation {
+            connectionLimit = 200;
+          };
+          "@cat_error" = catErrorLocation;
+        };
+      };
+
+      "immich.${network.publicDomain}" = {
+        enableACME = true;
+        forceSSL = true;
+        # Immich uploads and streams large RAW photos, video streams, and thumbnails.
+        # Disable buffering and compression on large binary streams to prevent latency spikes.
+        extraConfig = ''
+          client_max_body_size 50000M;
+          proxy_read_timeout 600s;
+          proxy_send_timeout 600s;
+          proxy_request_buffering off;
+          proxy_buffering off;
+          proxy_http_version 1.1;
+          proxy_buffers 16 256k;
+          proxy_busy_buffers_size 512k;
+        '';
+        locations = {
+          "/" = proxyLocation {
+            connectionLimit = 200;
+          };
+          "@cat_error" = catErrorLocation;
+        };
+      };
+
+      "mealie.${network.publicDomain}" = {
+        enableACME = true;
+        forceSSL = true;
+        locations = {
+          "/" = proxyLocation {
+            connectionLimit = 100;
+          };
           "@cat_error" = catErrorLocation;
         };
       };
