@@ -20,6 +20,13 @@
     qrencode
   ];
 
+  git-hooks.hooks.nixfmt-check = {
+    enable = true;
+    name = "Check Nix formatting";
+    entry = "${pkgs.nix}/bin/nix fmt -- --check";
+    files = "\\.nix$";
+  };
+
   scripts.bootstrap-node.exec = ''
     REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
     exec "$REPO_DIR/scripts/bootstrap-node.sh" "$@"

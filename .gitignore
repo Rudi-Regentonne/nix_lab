@@ -2,3 +2,4 @@ result*
 .direnv
 .devenv
 .bootstrap
+.pre-commit-config.yaml

@@ -16,6 +16,10 @@
       url = "github:cachix/devenv";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    git-hooks = {
+      url = "github:cachix/git-hooks.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -26,6 +30,7 @@
       colmena,
       sops-nix,
       devenv,
+      git-hooks,
     }@inputs:
     let
       system = "x86_64-linux";
