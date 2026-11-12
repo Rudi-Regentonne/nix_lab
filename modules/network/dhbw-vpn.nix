@@ -22,6 +22,8 @@ let
 
   hostsFile = pkgs.writeText "dhbw-vpn-hosts" (concatStringsSep "\n" redirectHosts);
 
+  dnsmasqHostsFile = "/run/dhbw-vpn/hosts";
+
   vpncScript = pkgs.writeShellScript "dhbw-vpn-vpnc" ''
     set -euo pipefail
 
@@ -32,12 +34,23 @@ let
         pkgs.coreutils
         pkgs.gnugrep
         pkgs.gawk
+        pkgs.procps
+        pkgs.systemd
       ]
     }:$PATH"
 
     TABLE="${toString cfg.routingTable}"
     PRIORITY="${toString cfg.rulePriority}"
     HOSTS="${hostsFile}"
+    DNS_HOSTS="${dnsmasqHostsFile}"
+
+    reload_dnsmasq() {
+      if systemctl is-active --quiet dnsmasq.service 2>/dev/null; then
+        systemctl reload dnsmasq.service 2>/dev/null || systemctl kill -s HUP dnsmasq.service 2>/dev/null || true
+      elif pgrep -x dnsmasq >/dev/null 2>&1; then
+        pkill -HUP -x dnsmasq 2>/dev/null || true
+      fi
+    }
 
     flush_split_routes() {
       ip rule show | awk -v table="$TABLE" '
@@ -47,6 +60,10 @@ let
         }
       '
       ip route flush table "$TABLE" 2>/dev/null || true
+
+      mkdir -p "$(dirname "$DNS_HOSTS")"
+      : > "$DNS_HOSTS"
+      reload_dnsmasq
     }
 
     apply_split_routes() {
@@ -81,6 +98,9 @@ let
         echo "$ips"
       }
 
+      TMP_DNS="$(mktemp)"
+      chmod 0644 "$TMP_DNS"
+
       while IFS= read -r host || [ -n "$host" ]; do
         host="$(echo "$host" | tr -d ' \t\r')"
         [ -z "$host" ] && continue
@@ -104,8 +124,13 @@ let
           ip rule del to "$ip" table "$TABLE" 2>/dev/null || true
           ip rule add to "$ip" table "$TABLE" priority "$PRIORITY"
           echo "dhbw-vpn: $host -> $ip via $TUNDEV (table $TABLE)"
+          echo "$ip $host" >> "$TMP_DNS"
         done
       done < "$HOSTS"
+
+      mkdir -p "$(dirname "$DNS_HOSTS")"
+      mv -f "$TMP_DNS" "$DNS_HOSTS"
+      reload_dnsmasq
     }
 
     case "''${reason:-}" in
@@ -220,6 +245,13 @@ in
       "dhbw-vpn-2fa-secret".sopsFile = ../../secrets/vpn-shared.yaml;
     };
 
+    systemd.tmpfiles.rules = [
+      "d /run/dhbw-vpn 0755 root root -"
+      "f /run/dhbw-vpn/hosts 0644 root root -"
+    ];
+
+    services.dnsmasq.settings."addn-hosts" = dnsmasqHostsFile;
+
     systemd.services.dhbw-vpn = {
       description = "DHBW Karlsruhe AnyConnect split-tunnel VPN";
       after = [
@@ -231,6 +263,14 @@ in
 
       serviceConfig = {
         Type = "simple";
+        ExecStartPre = pkgs.writeShellScript "dhbw-vpn-pre" ''
+          set -euo pipefail
+          mkdir -p "$(dirname "${dnsmasqHostsFile}")"
+          : > "${dnsmasqHostsFile}"
+          if ${pkgs.systemd}/bin/systemctl is-active --quiet dnsmasq.service 2>/dev/null; then
+            ${pkgs.systemd}/bin/systemctl reload dnsmasq.service 2>/dev/null || true
+          fi
+        '';
         ExecStart = "${vpnScript}";
         Restart = "always";
         RestartSec = "15s";

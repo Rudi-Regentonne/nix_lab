@@ -86,6 +86,10 @@ in
         ip rule add to ${network.subnet} table main priority 900
         ip rule add to ${network.wireguard.subnet} table main priority 901
 
+        # Route T-Online outgoing SMTP traffic directly via Renate WAN (bypass WireGuard/Shrek exit)
+        ip rule del to 194.25.134.0/24 table main 2>/dev/null || true
+        ip rule add to 194.25.134.0/24 table main priority 950
+
         # Direct all home LAN traffic to the WireGuard exit table
         ip rule add from ${network.subnet} table 51820 priority 1000
       '';
@@ -94,6 +98,7 @@ in
         ip rule del table 51820 2>/dev/null || true
         ip rule del to ${network.subnet} table main 2>/dev/null || true
         ip rule del to ${network.wireguard.subnet} table main 2>/dev/null || true
+        ip rule del to 194.25.134.0/24 table main 2>/dev/null || true
         ip route flush table 51820 2>/dev/null || true
       '';
     };
@@ -119,6 +124,11 @@ in
         # Allow remote road-warrior VPN clients on WireGuard to access home LAN
         iptables -A FORWARD -i ${network.wireguard.interface} -o ${network.hosts.router.lanInterface} -s ${network.wireguard.subnet} -d ${network.subnet} -j ACCEPT
 
+        # Allow T-Online mail (IMAP port 993, SMTP ports 465, 587) out of physical WAN
+        iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -d 194.25.134.0/24 -p tcp -m multiport --dports 465,587,993 -j ACCEPT
+        iptables -A FORWARD -i ${network.hosts.router.wanInterface} -o ${network.hosts.router.lanInterface} -s 194.25.134.0/24 -p tcp -m multiport --sports 465,587,993 -m state --state ESTABLISHED,RELATED -j ACCEPT
+        iptables -t nat -A POSTROUTING -o ${network.hosts.router.wanInterface} -d 194.25.134.0/24 -p tcp -m multiport --dports 465,587,993 -j MASQUERADE
+
         # Prevent un-tunneled internet leaks from LAN out physical WAN
         iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -j REJECT --reject-with icmp-net-unreachable
 
@@ -133,12 +143,16 @@ in
   # DNS via Dnsmasq - dynamically populated from network.hosts
   services.dnsmasq = {
     enable = true;
+    resolveLocalQueries = false;
     settings = {
       interface = network.hosts.router.lanInterface;
       listen-address = network.hosts.router.ip;
       bind-interfaces = true;
+      no-resolv = true;
+      strict-order = true;
       # Prefer Shrek DNS over encrypted WireGuard tunnel, fallback to 1.1.1.1
       server = [
+        "/dh-karlsruhe.de/${network.wireguard.shrek.address}"
         network.wireguard.shrek.address
         "1.1.1.1"
       ];
