@@ -67,6 +67,7 @@ in
           autoStart = cfg.autoStart;
           user = "1000:1000";
           environment = {
+            TZ = config.time.timeZone;
             IMMICH_PORT = toString cfg.port;
             IMMICH_HOST = "127.0.0.1";
             DB_URL = "postgresql://immich@127.0.0.1:5432/immich";
@@ -91,6 +92,7 @@ in
           autoStart = cfg.autoStart;
           user = "1000:1000";
           environment = {
+            TZ = config.time.timeZone;
             IMMICH_PORT = "3003";
             IMMICH_HOST = "127.0.0.1";
             MACHINE_LEARNING_MODEL_REVISION = "v2";
