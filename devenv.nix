@@ -35,7 +35,15 @@
   scripts.edit-secrets.exec = ''
     REPO_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
     export SOPS_AGE_KEY_FILE="''${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
-    sops "$REPO_DIR/secrets/secrets.yaml"
+    TARGET="''${1:-common}"
+    TARGET="''${TARGET%.yaml}"
+    FILE="$REPO_DIR/secrets/$TARGET.yaml"
+    if [ ! -f "$FILE" ]; then
+      echo "Unknown secrets file: $FILE"
+      echo "Available: $(ls -1 "$REPO_DIR/secrets"/*.yaml | xargs -n1 basename | sed 's/\.yaml$//' | tr '\n' ' ')"
+      exit 1
+    fi
+    sops "$FILE"
   '';
 
   scripts.set-password.exec = ''
@@ -72,8 +80,8 @@
 
     echo "❄️ nix_lab devenv loaded."
     echo "Available helper commands:"
-    echo "  set-password [key]         - Interactively set & hash password in secrets.yaml"
-    echo "  edit-secrets               - Edit secrets/secrets.yaml with $EDITOR"
+    echo "  set-password [key] [file]  - Interactively set & hash password (default: common.yaml)"
+    echo "  edit-secrets [name]        - Edit secrets/<name>.yaml with $EDITOR (default: common)"
     echo "  bootstrap-node <host> <ip> - Provision a fresh node via nixos-anywhere"
     echo "  deploy [-d|--dirty] [...]  - Auto-commit & push to Git, then colmena apply"
     echo "  flash-bootstick [device]   - Build and write headless ISO (e.g. /dev/sda)"

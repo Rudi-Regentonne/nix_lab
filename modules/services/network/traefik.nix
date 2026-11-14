@@ -11,6 +11,7 @@ let
   z2mHost = "z2m.${network.domain}";
   mealieHost = "mealie.${network.domain}";
   mealiePublicHost = "mealie.${network.publicDomain}";
+  beszelHost = "beszel.${network.domain}";
 in
 {
   services.traefik = {
@@ -82,6 +83,11 @@ in
           ];
           service = "mealie";
         };
+        beszel = {
+          rule = "Host(`${beszelHost}`)";
+          entryPoints = [ "lan" ];
+          service = "beszel";
+        };
       };
       services = {
         authentik.loadBalancer.servers = [ { url = "http://127.0.0.1:9000"; } ];
@@ -90,6 +96,7 @@ in
         homeassistant.loadBalancer.servers = [ { url = "http://127.0.0.1:8123"; } ];
         zigbee2mqtt.loadBalancer.servers = [ { url = "http://127.0.0.1:8080"; } ];
         mealie.loadBalancer.servers = [ { url = "http://127.0.0.1:9002"; } ];
+        beszel.loadBalancer.servers = [ { url = "http://127.0.0.1:8090"; } ];
       };
     };
   };

@@ -22,14 +22,14 @@ jobs:
           mapfile -d '' nix_files < <(find . -name '*.nix' -not -path './.git/*' -not -path './.devenv/*' -not -path './.direnv/*' -print0)
           nix fmt -- --check "${nix_files[@]}"
 
-      - name: Check Router Flake Evaluation
+      - name: Build Router Configuration
         run: |
-          nix build .#nixosConfigurations.renate.config.system.build.toplevel --dry-run
+          nix build .#nixosConfigurations.renate.config.system.build.toplevel --no-link
 
-      - name: Check Compute Node Flake Evaluation
+      - name: Build Compute Node Configuration
         run: |
-          nix build .#nixosConfigurations.compute0.config.system.build.toplevel --dry-run
+          nix build .#nixosConfigurations.compute0.config.system.build.toplevel --no-link
 
-      - name: Check Shrek VPS Flake Evaluation
+      - name: Build Shrek VPS Configuration
         run: |
-          nix build .#nixosConfigurations.shrek.config.system.build.toplevel --dry-run
+          nix build .#nixosConfigurations.shrek.config.system.build.toplevel --no-link

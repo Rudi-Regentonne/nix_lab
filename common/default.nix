@@ -4,6 +4,7 @@
   imports = [
     ../modules/security/sops.nix
     ../modules/core/auto-upgrade.nix
+    ../modules/services/monitoring/beszel.nix
   ];
 
   boot.loader.systemd-boot.enable = true;
@@ -60,6 +61,13 @@
       "root"
       "qajus"
     ];
+  };
+
+  # Monitoring agent across all hosts. Paste the hub public key from
+  # http://beszel.home ("Add System") to start the agents.
+  lab.beszel.agent = {
+    enable = true;
+    key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGlu0jVpPa1S4s10pjkdULOJ/uW5yOShIn2dZSVo+tVp";
   };
 
   system.stateVersion = "25.11";

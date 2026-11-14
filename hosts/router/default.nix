@@ -174,6 +174,7 @@ in
         "/hass.${network.domain}/${network.hosts.compute.ip}"
         "/z2m.${network.domain}/${network.hosts.compute.ip}"
         "/mealie.${network.domain}/${network.hosts.compute.ip}"
+        "/beszel.${network.domain}/${network.hosts.compute.ip}"
       ]
       ++ (lib.mapAttrsToList (_: host: "/${host.hostName}.${network.domain}/${host.ip}") network.hosts);
     };
@@ -254,13 +255,6 @@ in
               description = "NixOS Core Router";
             };
           }
-          {
-            "Dell Core Switch" = {
-              icon = "dell.png";
-              href = "http://${network.hosts.switch.ip}";
-              description = "PowerConnect 2724";
-            };
-          }
         ];
       }
     ];
@@ -278,6 +272,9 @@ in
 
   # Automatic daily upgrade from GitHub
   lab.autoUpgrade.enable = true;
+
+  # SMART disk health monitoring in Beszel
+  lab.beszel.agent.smartmon = true;
 
   system.stateVersion = "25.11";
 }

@@ -141,6 +141,12 @@ in
   # Automatic daily upgrade from GitHub
   lab.autoUpgrade.enable = true;
 
+  # Monitoring hub + SMART disk monitoring
+  lab.beszel = {
+    hub.enable = true;
+    agent.smartmon = true;
+  };
+
   environment.systemPackages = with pkgs; [
     podman-compose
     pciutils

@@ -5,11 +5,12 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 export SOPS_AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
-SECRETS_FILE="$REPO_ROOT/secrets/secrets.yaml"
+CLIENTS_SECRETS_FILE="$REPO_ROOT/secrets/clients.yaml"
+ROUTER_SECRETS_FILE="$REPO_ROOT/secrets/router.yaml"
 NETWORK_FILE="$REPO_ROOT/common/network.nix"
 
-if [ ! -f "$SECRETS_FILE" ]; then
-  echo "❌ Error: secrets/secrets.yaml not found at $SECRETS_FILE"
+if [ ! -f "$CLIENTS_SECRETS_FILE" ]; then
+  echo "❌ Error: secrets/clients.yaml not found at $CLIENTS_SECRETS_FILE"
   exit 1
 fi
 
@@ -88,8 +89,8 @@ if [ "$ACTION" = "add" ]; then
   echo "✓ Generated WireGuard keypair (Public: ${PUB})"
 
   # Store private key in sops
-  echo "Encrypting private key into secrets/secrets.yaml..."
-  sops set "$SECRETS_FILE" "[\"wireguard\"][\"${NAME}-private\"]" "\"$PRIV\""
+  echo "Encrypting private key into secrets/clients.yaml..."
+  sops set "$CLIENTS_SECRETS_FILE" "[\"wireguard\"][\"${NAME}-private\"]" "\"$PRIV\""
   echo "✓ Private key encrypted under wireguard.${NAME}-private"
 
   # Append client to common/network.nix
@@ -124,9 +125,14 @@ fi
 # Show existing client profile
 CLIENT="$ACTION"
 
-ENDPOINT=$(sops -d --extract '["shrek-public-ip"]' "$SECRETS_FILE" 2>/dev/null || true)
+if [ ! -f "$ROUTER_SECRETS_FILE" ]; then
+  echo "❌ Error: secrets/router.yaml not found at $ROUTER_SECRETS_FILE"
+  exit 1
+fi
+
+ENDPOINT=$(sops -d --extract '["shrek-public-ip"]' "$ROUTER_SECRETS_FILE" 2>/dev/null || true)
 if [ -z "$ENDPOINT" ]; then
-  echo "❌ Error: shrek-public-ip not found in secrets/secrets.yaml."
+  echo "❌ Error: shrek-public-ip not found in secrets/router.yaml."
   exit 1
 fi
 
@@ -148,7 +154,7 @@ if [ -z "$CLIENT_ADDR" ]; then
   exit 1
 fi
 
-PRIV=$(sops -d --extract "[\"wireguard\"][\"${CLIENT}-private\"]" "$SECRETS_FILE" 2>/dev/null || true)
+PRIV=$(sops -d --extract "[\"wireguard\"][\"${CLIENT}-private\"]" "$CLIENTS_SECRETS_FILE" 2>/dev/null || true)
 if [ -z "$PRIV" ]; then
   echo "======================================================"
   cat <<EOF

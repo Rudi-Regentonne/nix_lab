@@ -53,7 +53,10 @@ else
 fi
 
 export SOPS_AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
-sops updatekeys -y secrets/secrets.yaml
+for secret_file in secrets/*.yaml; do
+  [ -f "$secret_file" ] || continue
+  sops updatekeys -y "$secret_file"
+done
 echo "✓ Secrets successfully re-encrypted with new host key"
 
 echo "=== [4/4] Provisioning with nixos-anywhere ==="

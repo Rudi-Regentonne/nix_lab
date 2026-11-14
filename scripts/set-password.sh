@@ -2,9 +2,13 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SECRETS_FILE="${REPO_ROOT}/secrets/secrets.yaml"
-
 KEY_NAME="${1:-user-password-hash}"
+TARGET_FILE="${2:-common.yaml}"
+if [[ "$TARGET_FILE" == */* ]]; then
+  SECRETS_FILE="$TARGET_FILE"
+else
+  SECRETS_FILE="${REPO_ROOT}/secrets/${TARGET_FILE}"
+fi
 
 echo "======================================================"
 echo " Update Encrypted Password: ${KEY_NAME}"

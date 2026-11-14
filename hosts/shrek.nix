@@ -81,6 +81,7 @@ in
         443
       ];
       trustedInterfaces = [ wg.interface ];
+      interfaces.${network.ingressWireguard.interface}.allowedTCPPorts = [ 45876 ];
       checkReversePath = "loose";
 
       extraCommands = ''

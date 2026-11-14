@@ -30,17 +30,12 @@ in
       default = "/Paul/services/mealie/data";
       description = "Path on host (e.g. ZFS dataset) to Mealie recipe files, database, and storage";
     };
-
-    image = mkOption {
-      type = types.str;
-      default = "ghcr.io/mealie-recipes/mealie:latest";
-      description = "OCI image for Mealie";
-    };
   };
 
   config = mkIf cfg.enable {
     virtualisation.oci-containers.containers.mealie = {
-      image = cfg.image;
+      # Literal tag lets Renovate track and update Mealie releases.
+      image = "ghcr.io/mealie-recipes/mealie:v3.30.0";
       autoStart = cfg.autoStart;
       environment = {
         ALLOW_SIGNUP = "false";

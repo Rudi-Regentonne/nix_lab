@@ -86,12 +86,6 @@ rec {
       ip = wireguard.shrek.address;
     };
 
-    switch = {
-      hostName = "switch";
-      ip = "192.168.10.2";
-      description = "Dell PowerConnect 2724 Core Switch";
-    };
-
     compute = {
       hostName = "compute0";
       lanInterface = "enp8s0u1";

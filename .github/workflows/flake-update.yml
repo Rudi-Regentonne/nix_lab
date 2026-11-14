@@ -38,10 +38,10 @@ jobs:
           nix fmt -- --check "${nix_files[@]}"
           # 2. Build updated router toplevel
           nix build .#nixosConfigurations.renate.config.system.build.toplevel --out-link result-new
-          # 3. Check compute node evaluation
-          nix build .#nixosConfigurations.compute0.config.system.build.toplevel --dry-run
-          # 4. Check shrek VPS evaluation
-          nix build .#nixosConfigurations.shrek.config.system.build.toplevel --dry-run
+          # 3. Build compute node toplevel
+          nix build .#nixosConfigurations.compute0.config.system.build.toplevel --no-link
+          # 4. Build shrek VPS toplevel
+          nix build .#nixosConfigurations.shrek.config.system.build.toplevel --no-link
 
       - name: Generate diff and commit
         run: |
