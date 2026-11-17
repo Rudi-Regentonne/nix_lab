@@ -16,6 +16,10 @@ let
         network.wireguard.subnet
         network.wireguard.subnet6
         network.ingressWireguard.subnet
+        # KIT campus & student dorm CGNAT
+        "129.13.0.0/16"
+        "141.3.0.0/16"
+        "141.70.0.0/16"
       ];
     };
   };

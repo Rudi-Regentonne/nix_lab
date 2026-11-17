@@ -75,11 +75,13 @@ in
             REDIS_PORT = "6379";
             REDIS_DBINDEX = "2";
             IMMICH_MACHINE_LEARNING_URL = "http://127.0.0.1:3003";
+            IMMICH_CONFIG_FILE = "/config/immich.yaml";
           };
           extraOptions = hardenedOptions ++ gpuOptions ++ [ "--shm-size=512m" ];
           volumes = [
             "${cfg.mediaLocation}:/data"
             "/etc/localtime:/etc/localtime:ro"
+            "${config.sops.templates."immich-config.yaml".path}:/config/immich.yaml:ro"
           ];
         };
 

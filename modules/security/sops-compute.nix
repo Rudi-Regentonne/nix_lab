@@ -58,5 +58,25 @@ in
       mode = "0400";
       restartUnits = [ "podman-altero.service" ];
     };
+
+    templates."immich-config.yaml" = {
+      content = ''
+        notifications:
+          smtp:
+            enabled: true
+            from: "${config.sops.placeholder."smtp-from"}"
+            transport:
+              host: "${config.sops.placeholder."smtp-host"}"
+              port: ${config.sops.placeholder."smtp-port"}
+              secure: true
+              username: "${config.sops.placeholder."smtp-username"}"
+              password: "${config.sops.placeholder."smtp-password"}"
+              ignoreCert: false
+      '';
+      owner = "qajus";
+      group = "root";
+      mode = "0400";
+      restartUnits = [ "podman-immich-server.service" ];
+    };
   };
 }
