@@ -73,12 +73,12 @@ in
           fi
         fi
 
-        # Route LAN traffic via Shrek over WireGuard in table 51820
+        # Route selected traffic via Shrek over WireGuard in table 51820
         ip route replace default via ${network.wireguard.shrek.address} dev ${network.wireguard.interface} table 51820
         ip route replace unreachable default metric 1000 table 51820
 
         # Policy routing rules
-        ip rule del table 51820 2>/dev/null || true
+        while ip rule del table 51820 2>/dev/null; do :; done
         ip rule del to ${network.subnet} table main 2>/dev/null || true
         ip rule del to ${network.wireguard.subnet} table main 2>/dev/null || true
 
@@ -86,31 +86,32 @@ in
         ip rule add to ${network.subnet} table main priority 900
         ip rule add to ${network.wireguard.subnet} table main priority 901
 
-        # Route T-Online outgoing SMTP traffic directly via Renate WAN (bypass WireGuard/Shrek exit)
-        ip rule del to 194.25.134.0/24 table main 2>/dev/null || true
-        ip rule add to 194.25.134.0/24 table main priority 950
-
-        # Route traffic to Renate's physical WAN subnet (ESPHome & local upstream devices) via table main
-        ip rule del to 100.85.116.0/24 table main 2>/dev/null || true
-        ip rule add to 100.85.116.0/24 table main priority 951
-
-        # Direct all home LAN traffic to the WireGuard exit table
-        ip rule add from ${network.subnet} table 51820 priority 1000
+        # Route WireGuard client subnets and domain-marked traffic via Shrek (table 51820)
+        ${lib.concatMapStringsSep "\n        " (
+          subnet: "ip rule add to ${subnet} table 51820 priority 990"
+        ) (lib.concatLists (lib.mapAttrsToList (_: c: c.routedSubnets or [ ]) network.wireguard.clients))}
+        ip rule add fwmark 0x51820 table 51820 priority 1000
       '';
 
       postShutdown = ''
-        ip rule del table 51820 2>/dev/null || true
+        while ip rule del table 51820 2>/dev/null; do :; done
         ip rule del to ${network.subnet} table main 2>/dev/null || true
         ip rule del to ${network.wireguard.subnet} table main 2>/dev/null || true
-        ip rule del to 194.25.134.0/24 table main 2>/dev/null || true
-        ip rule del to 100.85.116.0/24 table main 2>/dev/null || true
         ip route flush table 51820 2>/dev/null || true
       '';
+    };
+
+    # Direct WAN NAT for default home LAN internet traffic
+    nat = {
+      enable = true;
+      externalInterface = network.hosts.router.wanInterface;
+      internalInterfaces = [ network.hosts.router.lanInterface ];
     };
 
     # Firewall Settings
     firewall = {
       enable = true;
+      extraPackages = [ pkgs.ipset ];
       allowedTCPPorts = [
         22
         8082
@@ -122,28 +123,33 @@ in
       checkReversePath = "loose";
 
       extraCommands = ''
-        # Allow forwarding between home LAN and WireGuard exit tunnel
+        # Dynamic ipset populated by dnsmasq for domains that exit via Shrek
+        ipset create shrek_route hash:ip -exist
+        iptables -t mangle -A PREROUTING -i ${network.hosts.router.lanInterface} -m set --match-set shrek_route dst -j MARK --set-mark 0x51820
+
+        # Allow normal LAN internet traffic out physical WAN
+        iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -j ACCEPT
+        iptables -A FORWARD -i ${network.hosts.router.wanInterface} -o ${network.hosts.router.lanInterface} -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+        # Allow forwarding between home LAN and WireGuard tunnel (selective domains + fritzvpn)
         iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.wireguard.interface} -j ACCEPT
         iptables -A FORWARD -i ${network.wireguard.interface} -o ${network.hosts.router.lanInterface} -m state --state ESTABLISHED,RELATED -j ACCEPT
 
         # Allow remote road-warrior VPN clients on WireGuard to access home LAN
         iptables -A FORWARD -i ${network.wireguard.interface} -o ${network.hosts.router.lanInterface} -s ${network.wireguard.subnet} -d ${network.subnet} -j ACCEPT
 
-        # Allow T-Online mail (IMAP port 993, SMTP ports 465, 587) out of physical WAN
-        iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -d 194.25.134.0/24 -p tcp -m multiport --dports 465,587,993 -j ACCEPT
-        iptables -A FORWARD -i ${network.hosts.router.wanInterface} -o ${network.hosts.router.lanInterface} -s 194.25.134.0/24 -p tcp -m multiport --sports 465,587,993 -m state --state ESTABLISHED,RELATED -j ACCEPT
-        iptables -t nat -A POSTROUTING -o ${network.hosts.router.wanInterface} -d 194.25.134.0/24 -p tcp -m multiport --dports 465,587,993 -j MASQUERADE
-
-        # Allow LAN (Home Assistant) to reach upstream devices (e.g. ESPHome) on physical WAN
-        iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -d 100.85.116.0/24 -j ACCEPT
-        iptables -A FORWARD -i ${network.hosts.router.wanInterface} -o ${network.hosts.router.lanInterface} -s 100.85.116.0/24 -m state --state ESTABLISHED,RELATED -j ACCEPT
-        iptables -t nat -A POSTROUTING -o ${network.hosts.router.wanInterface} -d 100.85.116.0/24 -j MASQUERADE
-
-        # Prevent un-tunneled internet leaks from LAN out physical WAN
-        iptables -A FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -j REJECT --reject-with icmp-net-unreachable
-
         # Clamp MSS to PMTU over WireGuard
         iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o ${network.wireguard.interface} -j TCPMSS --clamp-mss-to-pmtu
+      '';
+
+      extraStopCommands = ''
+        iptables -t mangle -D PREROUTING -i ${network.hosts.router.lanInterface} -m set --match-set shrek_route dst -j MARK --set-mark 0x51820 2>/dev/null || true
+        iptables -D FORWARD -i ${network.hosts.router.lanInterface} -o ${network.hosts.router.wanInterface} -j ACCEPT 2>/dev/null || true
+        iptables -D FORWARD -i ${network.hosts.router.wanInterface} -o ${network.hosts.router.lanInterface} -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
+        iptables -D FORWARD -i ${network.hosts.router.lanInterface} -o ${network.wireguard.interface} -j ACCEPT 2>/dev/null || true
+        iptables -D FORWARD -i ${network.wireguard.interface} -o ${network.hosts.router.lanInterface} -m state --state ESTABLISHED,RELATED -j ACCEPT 2>/dev/null || true
+        iptables -D FORWARD -i ${network.wireguard.interface} -o ${network.hosts.router.lanInterface} -s ${network.wireguard.subnet} -d ${network.subnet} -j ACCEPT 2>/dev/null || true
+        iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o ${network.wireguard.interface} -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true
       '';
     };
   };
@@ -160,11 +166,14 @@ in
       bind-interfaces = true;
       no-resolv = true;
       strict-order = true;
-      # Prefer Shrek DNS over encrypted WireGuard tunnel, fallback to 1.1.1.1
+      # Forward dh-karlsruhe.de to Shrek (dhbw-vpn split-DNS), everything else direct
       server = [
         "/dh-karlsruhe.de/${network.wireguard.shrek.address}"
-        network.wireguard.shrek.address
         "1.1.1.1"
+        "8.8.8.8"
+      ];
+      ipset = [
+        "/${lib.concatStringsSep "/" (network.dhbwVpnDomains ++ network.shrekExitDomains)}/shrek_route"
       ];
 
       # Automatically generate DNS records for all hosts in the network inventory
@@ -175,6 +184,7 @@ in
         "/z2m.${network.domain}/${network.hosts.compute.ip}"
         "/mealie.${network.domain}/${network.hosts.compute.ip}"
         "/beszel.${network.domain}/${network.hosts.compute.ip}"
+        "/crustypump.${network.domain}/${network.hosts.compute.ip}"
       ]
       ++ (lib.mapAttrsToList (_: host: "/${host.hostName}.${network.domain}/${host.ip}") network.hosts);
     };

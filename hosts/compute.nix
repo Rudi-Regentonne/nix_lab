@@ -23,6 +23,7 @@ in
     ../modules/services/containers/immich.nix
     ../modules/services/containers/homeassistant.nix
     ../modules/services/containers/mealie.nix
+    ../modules/services/containers/crustypump.nix
   ];
 
   networking = {
@@ -122,6 +123,9 @@ in
     enable = true;
     autoStart = true;
   };
+
+  # CrustyPump heatpump logger and dashboard
+  lab.crustypump.enable = true;
 
   # Container Runtime: Podman with Docker CLI compatibility (like Dominik)
   virtualisation = {

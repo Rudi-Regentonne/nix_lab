@@ -7,6 +7,20 @@ rec {
   subnet = "192.168.10.0/24";
   gateway = "192.168.10.1";
 
+  # Domains routed from LAN -> wg0 -> shrek -> dhbw0 (DHBW VPN).
+  dhbwVpnDomains = [
+    "juris.de"
+    "www.juris.de"
+    "katalog.bibliothek.kit.edu"
+    "db1.inf.dh-karlsruhe.de"
+    "db2.inf.dh-karlsruhe.de"
+  ];
+
+  # Domains routed from LAN -> wg0 -> shrek WAN (VPS exit, not dhbw0).
+  shrekExitDomains = [
+    "dualis.dhbw.de"
+  ];
+
   # Dedicated public-ingress tunnel. The VPS terminates TLS and forwards HTTP
   # to compute0 without exposing the home LAN or application ports directly.
   ingressWireguard = {
@@ -58,6 +72,15 @@ rec {
     };
 
     clients = {
+      ida = {
+        address = "10.10.10.12";
+        address6 = "fd10:10:10::12";
+        publicKey = "NQGyD5o5qtZOrqLnC/b/g2pWuWt2AMVADnNnscXed3U=";
+        routedSubnets = [
+          "192.168.178.0/24"
+          "192.168.189.0/24"
+        ];
+      };
       phone = {
         address = "10.10.10.10";
         address6 = "fd10:10:10::10";
@@ -95,6 +118,12 @@ rec {
     nas = {
       hostName = "nas";
       ip = "192.168.10.20";
+    };
+
+    voronika = {
+      hostName = "voronika";
+      ip = "192.168.10.30";
+      mac = "d8:3a:dd:e0:9f:75";
     };
   };
 }

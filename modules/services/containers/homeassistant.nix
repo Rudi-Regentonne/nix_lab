@@ -51,12 +51,6 @@ in
       description = "Path on host (e.g. ZFS dataset) to Home Assistant storage";
     };
 
-    image = mkOption {
-      type = types.str;
-      default = "ghcr.io/home-assistant/home-assistant:stable";
-      description = "OCI image for Home Assistant";
-    };
-
     mqtt = {
       enable = mkOption {
         type = types.bool;
@@ -95,12 +89,6 @@ in
         default = "/dev/serial/by-id/usb-Itead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_V2_307d53971174ef11a37be41e313510fd-if00-port0";
         description = "Persistent /dev/serial/by-id path to USB Zigbee adapter (can be moved across USB ports without breaking)";
       };
-
-      image = mkOption {
-        type = types.str;
-        default = "docker.io/koenkk/zigbee2mqtt:latest";
-        description = "OCI image for Zigbee2MQTT";
-      };
     };
   };
 
@@ -108,7 +96,8 @@ in
     {
       # 1. Home Assistant container
       virtualisation.oci-containers.containers.homeassistant = {
-        image = cfg.image;
+        # Literal tag lets Renovate track and update Home Assistant releases.
+        image = "ghcr.io/home-assistant/home-assistant:2026.11.2";
         autoStart = cfg.autoStart;
         environment = {
           TZ = config.time.timeZone;
@@ -176,14 +165,15 @@ in
     # 3. Zigbee2MQTT container
     (mkIf cfg.zigbee2mqtt.enable {
       virtualisation.oci-containers.containers.zigbee2mqtt = {
-        image = cfg.zigbee2mqtt.image;
+        # Literal tag lets Renovate track and update Zigbee2MQTT releases.
+        image = "docker.io/koenkk/zigbee2mqtt:2.14.3";
         autoStart = cfg.autoStart;
         environment = {
           TZ = config.time.timeZone;
         };
         extraOptions = [
           "--network=host"
-          "--device=${cfg.zigbee2mqtt.serialPort}:/dev/ttyUSB0"
+          "--device=${cfg.zigbee2mqtt.serialPort}:${cfg.zigbee2mqtt.serialPort}"
         ];
         volumes = [
           "${cfg.zigbee2mqtt.dataLocation}:/app/data"

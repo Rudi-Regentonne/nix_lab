@@ -55,13 +55,7 @@ in
 
   services.dhbw-vpn = {
     enable = true;
-    redirectHosts = [
-      "juris.de"
-      "www.juris.de"
-      "katalog.bibliothek.kit.edu"
-      "db1.inf.dh-karlsruhe.de"
-      "db2.inf.dh-karlsruhe.de"
-    ];
+    redirectHosts = network.dhbwVpnDomains;
   };
 
   networking = {
@@ -133,7 +127,8 @@ in
         allowedIPs = [
           "${client.address}/32"
           "${client.address6}/128"
-        ];
+        ]
+        ++ (client.routedSubnets or [ ]);
       }) wg.clients);
     };
 

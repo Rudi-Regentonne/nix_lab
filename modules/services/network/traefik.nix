@@ -12,6 +12,7 @@ let
   mealieHost = "mealie.${network.domain}";
   mealiePublicHost = "mealie.${network.publicDomain}";
   beszelHost = "beszel.${network.domain}";
+  crustypumpHost = "crustypump.${network.domain}";
 in
 {
   services.traefik = {
@@ -88,6 +89,11 @@ in
           entryPoints = [ "lan" ];
           service = "beszel";
         };
+        crustypump = {
+          rule = "Host(`${crustypumpHost}`)";
+          entryPoints = [ "lan" ];
+          service = "crustypump";
+        };
       };
       services = {
         authentik.loadBalancer.servers = [ { url = "http://127.0.0.1:9000"; } ];
@@ -97,6 +103,7 @@ in
         zigbee2mqtt.loadBalancer.servers = [ { url = "http://127.0.0.1:8080"; } ];
         mealie.loadBalancer.servers = [ { url = "http://127.0.0.1:9002"; } ];
         beszel.loadBalancer.servers = [ { url = "http://127.0.0.1:8090"; } ];
+        crustypump.loadBalancer.servers = [ { url = "http://127.0.0.1:8050"; } ];
       };
     };
   };

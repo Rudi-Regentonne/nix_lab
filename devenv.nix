@@ -83,7 +83,7 @@
     echo "  set-password [key] [file]  - Interactively set & hash password (default: common.yaml)"
     echo "  edit-secrets [name]        - Edit secrets/<name>.yaml with $EDITOR (default: common)"
     echo "  bootstrap-node <host> <ip> - Provision a fresh node via nixos-anywhere"
-    echo "  deploy [-d|--dirty] [...]  - Auto-commit & push to Git, then colmena apply"
+    echo "  deploy [colmena args...]   - Run colmena apply"
     echo "  flash-bootstick [device]   - Build and write headless ISO (e.g. /dev/sda)"
     echo "  wg-client [client]         - Display WireGuard profile & QR code (or list all)"
     echo "  add-wg-client [name]       - Create & encrypt a new WireGuard client"

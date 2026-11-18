@@ -20,6 +20,7 @@ in
       "smtp-from".sopsFile = computeSecrets;
       "altero-smtp-url".sopsFile = computeSecrets;
       "shrek-public-ip".sopsFile = computeSecrets;
+      "crustypump-pin".sopsFile = computeSecrets;
       "wireguard-ingress-private" = {
         sopsFile = computeSecrets;
         mode = "0400";
@@ -77,6 +78,16 @@ in
       group = "root";
       mode = "0400";
       restartUnits = [ "podman-immich-server.service" ];
+    };
+
+    templates."crustypump.env" = {
+      content = ''
+        HEATPUMP_PIN=${config.sops.placeholder."crustypump-pin"}
+      '';
+      owner = "root";
+      group = "root";
+      mode = "0400";
+      restartUnits = [ "podman-crustypump.service" ];
     };
   };
 }
