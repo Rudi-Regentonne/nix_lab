@@ -86,7 +86,11 @@
     serviceConfig = {
       Type = "oneshot";
       User = "postgres";
-      ExecStart = "${pkgs.postgresql_17}/bin/psql -d crustypump -c 'CREATE EXTENSION IF NOT EXISTS timescaledb;'";
+      ExecStart = pkgs.writeShellScript "postgresql-crustypump-init" ''
+        set -euo pipefail
+        ${pkgs.postgresql_17}/bin/psql -X -d crustypump -c "ALTER EXTENSION timescaledb UPDATE;" 2>/dev/null \
+          || ${pkgs.postgresql_17}/bin/psql -X -d crustypump -c "CREATE EXTENSION IF NOT EXISTS timescaledb;"
+      '';
     };
   };
 }
