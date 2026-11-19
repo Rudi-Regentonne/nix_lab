@@ -14,6 +14,7 @@ rec {
     "katalog.bibliothek.kit.edu"
     "db1.inf.dh-karlsruhe.de"
     "db2.inf.dh-karlsruhe.de"
+    "kleinanzeigen.de"
   ];
 
   # Domains routed from LAN -> wg0 -> shrek WAN (VPS exit, not dhbw0).

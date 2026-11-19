@@ -48,7 +48,7 @@ in
   config = mkIf cfg.enable {
     virtualisation.oci-containers.containers = {
       crustypump = {
-        image = "ghcr.io/rudi-regentonne/crustypump:0.1.3";
+        image = "ghcr.io/rudi-regentonne/crustypump:0.2.0";
         autoStart = cfg.autoStart;
         environment = {
           HEATPUMP_IP = cfg.heatpumpIp;
@@ -61,7 +61,7 @@ in
       };
 
       crustypump-dashboard = {
-        image = "ghcr.io/rudi-regentonne/crustypump-dashboard:0.1.3";
+        image = "ghcr.io/rudi-regentonne/crustypump-dashboard:0.2.0";
         autoStart = cfg.autoStart;
         environment = {
           DATABASE_URL = databaseUrl;
