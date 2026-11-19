@@ -181,7 +181,6 @@ in
         "/router.${network.domain}/${network.hosts.router.ip}"
         "/immich.${network.domain}/${network.hosts.compute.ip}"
         "/hass.${network.domain}/${network.hosts.compute.ip}"
-        "/z2m.${network.domain}/${network.hosts.compute.ip}"
         "/mealie.${network.domain}/${network.hosts.compute.ip}"
         "/beszel.${network.domain}/${network.hosts.compute.ip}"
         "/crustypump.${network.domain}/${network.hosts.compute.ip}"

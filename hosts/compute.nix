@@ -53,12 +53,20 @@ in
       # Immich is reachable only through the LAN Traefik entrypoint.
       interfaces.${network.hosts.compute.lanInterface} = {
         allowedTCPPorts = [
-          80 # Traefik LAN HTTP (Immich, Hass, Z2M, Mealie)
+          80 # Traefik LAN HTTP (Immich, Hass, Mealie)
           1400 # Sonos HTTP control
         ];
         allowedUDPPorts = [
           1900 # SSDP / UPnP discovery (Sonos)
           5353 # mDNS discovery (ESPHome, HomeKit, Sonos)
+        ];
+        # SSDP M-SEARCH multicast queries receive unicast replies on ephemeral
+        # UDP ports, which conntrack does not associate with the multicast send.
+        allowedUDPPortRanges = [
+          {
+            from = 32768;
+            to = 60999;
+          }
         ];
       };
       checkReversePath = "loose";

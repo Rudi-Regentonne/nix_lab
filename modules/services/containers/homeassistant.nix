@@ -9,25 +9,6 @@ with lib;
 
 let
   cfg = config.lab.homeassistant;
-
-  # Default Zigbee2MQTT configuration.yaml
-  z2mConfigFile = pkgs.writeText "z2m-configuration.yaml" ''
-    homeassistant: true
-    permit_join: false
-    mqtt:
-      base_topic: zigbee2mqtt
-      server: mqtt://127.0.0.1:${toString cfg.mqtt.port}
-    serial:
-      port: ${cfg.zigbee2mqtt.serialPort}
-      adapter: ember
-    frontend:
-      port: ${toString cfg.zigbee2mqtt.port}
-      host: 127.0.0.1
-    advanced:
-      log_level: info
-      log_output:
-        - console
-  '';
 in
 {
   options.lab.homeassistant = {
@@ -62,32 +43,6 @@ in
         type = types.port;
         default = 1883;
         description = "Port for Mosquitto MQTT broker";
-      };
-    };
-
-    zigbee2mqtt = {
-      enable = mkOption {
-        type = types.bool;
-        default = true;
-        description = "Enable Zigbee2MQTT container";
-      };
-
-      port = mkOption {
-        type = types.port;
-        default = 8080;
-        description = "Frontend port for Zigbee2MQTT web interface";
-      };
-
-      dataLocation = mkOption {
-        type = types.str;
-        default = "/Paul/services/zigbee2mqtt/data";
-        description = "Path on host to Zigbee2MQTT data and configuration";
-      };
-
-      serialPort = mkOption {
-        type = types.str;
-        default = "/dev/serial/by-id/usb-Itead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_V2_307d53971174ef11a37be41e313510fd-if00-port0";
-        description = "Persistent /dev/serial/by-id path to USB Zigbee adapter (can be moved across USB ports without breaking)";
       };
     };
   };
@@ -159,47 +114,6 @@ in
             };
           }
         ];
-      };
-    })
-
-    # 3. Zigbee2MQTT container
-    (mkIf cfg.zigbee2mqtt.enable {
-      virtualisation.oci-containers.containers.zigbee2mqtt = {
-        # Literal tag lets Renovate track and update Zigbee2MQTT releases.
-        image = "docker.io/koenkk/zigbee2mqtt:2.14.3";
-        autoStart = cfg.autoStart;
-        environment = {
-          TZ = config.time.timeZone;
-        };
-        extraOptions = [
-          "--network=host"
-          "--device=${cfg.zigbee2mqtt.serialPort}:${cfg.zigbee2mqtt.serialPort}"
-        ];
-        volumes = [
-          "${cfg.zigbee2mqtt.dataLocation}:/app/data"
-          "/run/udev:/run/udev:ro"
-        ];
-      };
-
-      systemd.tmpfiles.rules = [
-        "d ${cfg.zigbee2mqtt.dataLocation} 0755 root root - -"
-      ];
-
-      systemd.services.podman-zigbee2mqtt = {
-        after = [
-          "zfs-mount.service"
-        ]
-        ++ optionals cfg.mqtt.enable [ "mosquitto.service" ];
-        requires = optionals cfg.mqtt.enable [ "mosquitto.service" ];
-        unitConfig = {
-          RequiresMountsFor = cfg.zigbee2mqtt.dataLocation;
-        };
-        preStart = ''
-          if [ ! -f "${cfg.zigbee2mqtt.dataLocation}/configuration.yaml" ]; then
-            cp "${z2mConfigFile}" "${cfg.zigbee2mqtt.dataLocation}/configuration.yaml"
-            chmod 0644 "${cfg.zigbee2mqtt.dataLocation}/configuration.yaml"
-          fi
-        '';
       };
     })
   ]);
