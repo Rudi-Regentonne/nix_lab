@@ -48,6 +48,18 @@ let
       return 503 '<!doctype html><meta charset="utf-8"><style>html,body{margin:0;height:100%;background:#000;display:flex;align-items:center;justify-content:center}img{display:block;max-width:100vw;max-height:100vh}</style><img src="https://http.cat/$status">';
     '';
   };
+
+  # Temporary mitigation for nginx2root (CVE-2026-123007, CVE-2026-123633,
+  # CVE-2026-121810) until nginxStable 1.30.7 lands in nixpkgs.
+  publicVhost =
+    attrs:
+    {
+      enableACME = true;
+      forceSSL = true;
+      http2 = false;
+      http3 = false;
+    }
+    // attrs;
 in
 {
   security.acme = {
@@ -86,12 +98,12 @@ in
       "_" = {
         default = true;
         rejectSSL = true;
+        http2 = false;
+        http3 = false;
         locations."/".return = "444";
       };
 
-      "auth.${network.publicDomain}" = {
-        enableACME = true;
-        forceSSL = true;
+      "auth.${network.publicDomain}" = publicVhost {
         locations = {
           # Authentik's SPA requests hundreds of hashed chunks in parallel.
           # CrowdSec and Authentik's own throttles protect these endpoints;
@@ -106,9 +118,7 @@ in
         };
       };
 
-      "altero.${network.publicDomain}" = {
-        enableACME = true;
-        forceSSL = true;
+      "altero.${network.publicDomain}" = publicVhost {
         locations = {
           # Zotero sync, file transfers, long polling, WebSockets, and the web
           # UI share this endpoint. Generic edge limits break valid clients;
@@ -118,9 +128,7 @@ in
         };
       };
 
-      "hass.${network.publicDomain}" = {
-        enableACME = true;
-        forceSSL = true;
+      "hass.${network.publicDomain}" = publicVhost {
         locations = {
           # Home Assistant web UI, mobile app push/SSE, and WebSockets.
           "/" = proxyLocation {
@@ -130,9 +138,7 @@ in
         };
       };
 
-      "immich.${network.publicDomain}" = {
-        enableACME = true;
-        forceSSL = true;
+      "immich.${network.publicDomain}" = publicVhost {
         # Immich uploads and streams large RAW photos, video streams, and thumbnails.
         # Disable buffering and compression on large binary streams to prevent latency spikes.
         extraConfig = ''
@@ -153,9 +159,7 @@ in
         };
       };
 
-      "mealie.${network.publicDomain}" = {
-        enableACME = true;
-        forceSSL = true;
+      "mealie.${network.publicDomain}" = publicVhost {
         locations = {
           "/" = proxyLocation {
             connectionLimit = 100;
