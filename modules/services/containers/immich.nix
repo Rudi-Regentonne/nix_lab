@@ -63,7 +63,7 @@ in
       virtualisation.oci-containers.containers = {
         immich-server = {
           # Literal tags let Renovate update both Immich images together.
-          image = "ghcr.io/immich-app/immich-server:v3.4.1";
+          image = "ghcr.io/immich-app/immich-server:v3.4.2";
           autoStart = cfg.autoStart;
           user = "1000:1000";
           environment = {
@@ -88,9 +88,9 @@ in
         immich-machine-learning = {
           image =
             if nvidiaMachineLearningEnabled then
-              "ghcr.io/immich-app/immich-machine-learning:v3.4.1-cuda"
+              "ghcr.io/immich-app/immich-machine-learning:v3.4.2-cuda"
             else
-              "ghcr.io/immich-app/immich-machine-learning:v3.4.1";
+              "ghcr.io/immich-app/immich-machine-learning:v3.4.2";
           autoStart = cfg.autoStart;
           user = "1000:1000";
           environment = {

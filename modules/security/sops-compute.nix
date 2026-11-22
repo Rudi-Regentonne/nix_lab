@@ -1,6 +1,7 @@
 { config, ... }:
 
 let
+  network = import ../../common/network.nix;
   computeSecrets = ../../secrets/compute.yaml;
 in
 {
@@ -62,6 +63,8 @@ in
 
     templates."immich-config.yaml" = {
       content = ''
+        server:
+          externalDomain: "https://immich.${network.publicDomain}"
         notifications:
           smtp:
             enabled: true
