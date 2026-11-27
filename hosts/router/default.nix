@@ -247,6 +247,7 @@ in
     tcpdump
     nmap
     ethtool
+    wakeonlan
   ];
 
   # Dashboard
